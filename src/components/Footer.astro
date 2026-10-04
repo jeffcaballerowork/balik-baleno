@@ -1,0 +1,43 @@
+---
+import Logo from "./Logo.astro";
+---
+
+<footer class="site-footer">
+  <div class="content-width">
+    <div class="footer-main">
+      <div class="footer-about">
+        <Logo light />
+        <p>For every story that started here,<br />and every one still being written.</p>
+      </div>
+      <div class="footer-links">
+        <div>
+          <span>EXPLORE</span>
+          <button data-nav="/wall">Freedom Wall</button>
+          <button data-nav="/news">News & stories</button>
+          <button data-nav="/events">Events</button>
+        </div>
+        <div>
+          <span>FIND YOUR WAY</span>
+          <button data-nav="/batches">Your batch</button>
+          <button data-nav="/archive">The archive</button>
+          <button data-nav="/create">Leave a note</button>
+        </div>
+      </div>
+      <div class="footer-signoff">
+        Balik Baleno.<br />
+        <em>Where we always belong.</em><span>✳</span>
+      </div>
+    </div>
+    <p class="footer-disclaimer">
+      An independent alumni project, not affiliated with or endorsed by Baleno
+      National High School.
+    </p>
+    <div class="footer-bottom">
+      <span>© {new Date().getFullYear()} Balik Baleno.</span>
+      <span
+        >Baleno National High School <span class="footer-bottom-star">·</span>
+        Founded 1992</span
+      >
+    </div>
+  </div>
+</footer>

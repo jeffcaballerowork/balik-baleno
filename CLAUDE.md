@@ -1,1 +1,1 @@
-@AGENTS.md
+Balik Baleno: independent alumni site for Baleno National High School. Astro + React islands + Tailwind v4 + TypeScript on Cloudflare Workers (D1; R2 later). The existing UI is the source of truth: do not change layout, colors, fonts or spacing unless asked. Header is sticky, announcement strip scrolls away. Footer always carries the unofficial-site disclaimer. One step at a time; after each change run the screenshot diff against /design/baseline and commit.

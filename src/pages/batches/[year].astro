@@ -1,0 +1,16 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PhaseOnePlaceholder from "../../components/PhaseOnePlaceholder.astro";
+
+export function getStaticPaths() {
+  return Array.from({ length: 30 }, (_, index) => ({
+    params: { year: String(2025 - index) },
+  }));
+}
+
+const { year } = Astro.params;
+---
+
+<BaseLayout title={`Class of ${year}`}>
+  <PhaseOnePlaceholder />
+</BaseLayout>

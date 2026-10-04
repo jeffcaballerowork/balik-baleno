@@ -1,0 +1,90 @@
+---
+import Icon from "./Icon.astro";
+import Logo from "./Logo.astro";
+
+interface Props {
+  activePath: string;
+}
+
+const { activePath } = Astro.props;
+const navItems = [
+  { label: "The Wall", path: "/wall" },
+  { label: "News", path: "/news" },
+  { label: "Events", path: "/events" },
+  { label: "Batches", path: "/batches" },
+  { label: "Archive", path: "/archive" },
+];
+const normalizedPath = activePath.startsWith("/batches")
+  ? "/batches"
+  : activePath;
+---
+
+<header class="site-header">
+  <div class="header-inner content-width">
+    <Logo />
+    <nav class="" aria-label="Main navigation">
+      {
+        navItems.map(item => (
+          <button
+            class={normalizedPath === item.path ? "nav-active" : ""}
+            data-nav={item.path}
+          >
+            {item.label}
+          </button>
+        ))
+      }
+      <button class="mobile-join" data-nav="/create">
+        Join the room <Icon name="arrow" size={17} />
+      </button>
+    </nav>
+    <button class="header-join" data-nav="/create">
+      Join the room <Icon name="arrow" size={16} />
+    </button>
+    <button class="menu-toggle" aria-label="Open menu">
+      <Icon name="menu" size={25} />
+    </button>
+  </div>
+</header>
+
+<script>
+  import { iconPaths } from "./icon-paths";
+
+  const header = document.querySelector<HTMLElement>(".site-header");
+  const navigation = header?.querySelector<HTMLElement>("nav");
+  const menuToggle = header?.querySelector<HTMLButtonElement>(".menu-toggle");
+  const navButtons = document.querySelectorAll<HTMLButtonElement>("[data-nav]");
+
+  let menuOpen = false;
+  let lastY = window.scrollY;
+
+  for (const button of navButtons) {
+    button.addEventListener("click", () => {
+      const destination = button.dataset.nav;
+      if (!destination) return;
+      window.location.assign(destination);
+    });
+  }
+
+  menuToggle?.addEventListener("click", () => {
+    menuOpen = !menuOpen;
+    navigation?.classList.toggle("nav-open", menuOpen);
+    menuToggle.setAttribute("aria-label", menuOpen ? "Close menu" : "Open menu");
+    const menuPath = menuToggle.querySelector("svg path");
+    const icon = iconPaths[menuOpen ? "close" : "menu"][0];
+    if (menuPath && icon?.type === "path") menuPath.setAttribute("d", icon.d);
+  });
+
+  window.addEventListener(
+    "scroll",
+    () => {
+      const currentY = window.scrollY;
+      header?.classList.toggle("header-scrolled", currentY > 18);
+      header?.classList.toggle(
+        "header-hidden",
+        currentY > lastY && currentY > 110 && !menuOpen,
+      );
+      lastY = currentY;
+    },
+    { passive: true },
+  );
+</script>

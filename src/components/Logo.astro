@@ -1,0 +1,19 @@
+---
+interface Props {
+  light?: boolean;
+}
+
+const { light = false } = Astro.props;
+---
+
+<button
+  class:list={["brand", light && "brand-light"]}
+  data-nav="/"
+  aria-label="Balik Baleno home"
+>
+  <img class="brand-logo" src="/baleno-national-high-school-logo.jpg" alt="" />
+  <span class="brand-text">
+    <strong>Balik Baleno</strong>
+    <small>Where we always belong</small>
+  </span>
+</button>
