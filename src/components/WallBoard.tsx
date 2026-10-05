@@ -9,6 +9,7 @@ import NoteCard from "./NoteCard"
 import { initialNotes } from "../data/mock"
 
 import { noteLightbox } from "../stores/note-lightbox"
+import { consumeIncomingMockPinId, loadMockPins } from "../stores/mock-pins"
 
 interface WallBoardProps {
   notes?: typeof initialNotes
@@ -30,6 +31,8 @@ export default function WallBoard({
 
   interactive = true,
 }: WallBoardProps) {
+  const [wallNotes] = useState(() => [...loadMockPins().reverse(), ...notes])
+  const [newNoteId] = useState(consumeIncomingMockPinId)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
 
   const [scale, setScale] = useState(() =>
@@ -101,7 +104,7 @@ export default function WallBoard({
     } else {
       const current = noteId
         ? positions[noteId] ||
-          notes.find((note) => note.id === noteId) || { x: 0, y: 0 }
+          wallNotes.find((note) => note.id === noteId) || { x: 0, y: 0 }
         : offset
 
       gestureRef.current = {
@@ -185,9 +188,9 @@ export default function WallBoard({
     const gesture = gestureRef.current
 
     if (gesture?.id === event.pointerId && gesture.noteId && !gesture.moved) {
-      const note = notes.find((item) => item.id === gesture.noteId)
+      const note = wallNotes.find((item) => item.id === gesture.noteId)
 
-      if (note) noteLightbox.set({ note, notes })
+      if (note) noteLightbox.set({ note, notes: wallNotes })
     }
 
     pointerRef.current.delete(event.pointerId)
@@ -221,14 +224,14 @@ export default function WallBoard({
           leave a little of yourself here ♡
         </div>
         <div className="wall-scrawl wall-scrawl-two">FOUNDED 1992</div>
-        {notes.map((note) => {
+        {wallNotes.map((note) => {
           const position = positions[note.id] || note
 
           return (
             <div
               data-note-id={note.id}
               className={`wall-note-position ${
-                incomingId === note.id ? "is-new" : ""
+                incomingId === note.id || newNoteId === note.id ? "is-new" : ""
               }`}
               key={note.id}
               style={{
