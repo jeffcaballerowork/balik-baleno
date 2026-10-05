@@ -4,9 +4,9 @@ import type { PointerEvent as ReactPointerEvent } from "react"
 
 import Icon from "./Icon"
 
-import type { Note, NoteKind } from "../data/mock"
+import type { NoteKind } from "../data/mock"
 
-import { saveMockPin } from "../stores/mock-pins"
+import { createPin, WallApiError } from "../lib/wall-client"
 
 interface TemplateOption {
   id: NoteKind
@@ -46,6 +46,8 @@ export default function CreateEditor() {
 
   const [pinning, setPinning] = useState(false)
 
+  const [submissionMessage, setSubmissionMessage] = useState("")
+
   const drawingRef = useRef(false)
 
   const currentPath = useRef("")
@@ -64,46 +66,41 @@ export default function CreateEditor() {
     setPaths((previous) => [...previous.slice(0, -1), currentPath.current])
   }
 
-  function pinNote() {
+  async function pinNote() {
     if ((!text.trim() && !image && paths.length === 0) || pinning) return
 
     setPinning(true)
+    setSubmissionMessage("")
 
-    const note: Note = {
-      id: Date.now(),
-
-      kind: template,
-
-      text:
-        text.trim() ||
-        (image ? "A little memory from me" : "A little something I made"),
-
-      author: anonymous ? "Anonymous" : author.trim() || "A fellow alum",
-
-      x: 520,
-
-      y: 320,
-
-      rotation: -4,
-
-      image: image || undefined,
-
-      doodle: sticker || undefined,
-
-      drawing: paths.filter(Boolean),
-
-      ink,
-
-      font,
-
-      color: template === "sticky" ? "yellow" : undefined,
-    }
-
-    window.setTimeout(() => {
-      saveMockPin(note)
+    try {
+      await createPin({
+        kind: template,
+        color: template === "sticky" ? "yellow" : null,
+        body:
+          text.trim() ||
+          (image ? "A little memory from me" : "A little something I made"),
+        authorName: anonymous ? null : author.trim() || "A fellow alum",
+        font,
+        ink,
+        doodle: sticker || null,
+        drawing: paths.filter(Boolean),
+        x: 520,
+        y: 320,
+        rotation: -4,
+        hasPhoto: Boolean(image),
+      })
 
       window.location.assign("/wall")
-    }, 500)
+    } catch (error) {
+      if (error instanceof WallApiError) {
+        setSubmissionMessage(error.message)
+      } else {
+        console.error("Unable to add the note to the Freedom Wall.", error)
+        setSubmissionMessage("Your note could not be added right now.")
+      }
+
+      setPinning(false)
+    }
   }
 
   return (
@@ -356,9 +353,10 @@ export default function CreateEditor() {
             <div className="preview-stage-caption">
               {pinning
                 ? "Your note is on its way to the wall..."
-                : drawing
-                  ? "Draw directly on your note. Tap Draw again when done."
-                  : "Just like the real thing, but without the glue."}
+                : submissionMessage ||
+                  (drawing
+                    ? "Draw directly on your note. Tap Draw again when done."
+                    : "Just like the real thing, but without the glue.")}
             </div>
           </div>
           <div className="preview-submit">

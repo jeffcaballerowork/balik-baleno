@@ -11,12 +11,80 @@ export interface WallResponse {
   resetsAt: string
 }
 
+interface ApiErrorDetails {
+  code: string
+  message: string
+}
+
 const noteKinds: NoteKind[] = ["sticky", "torn", "notebook", "polaroid", "card"]
 
-const noteColors = ["yellow", "pink", "blue", "green", "mustard"]
+const noteColors = ["yellow", "pink", "blue", "green", "mustard"] as const
+
+const deviceTokenKey = "balik-baleno-device-token"
+
+export type NoteColor = typeof noteColors[number]
+
+export interface CreatePinInput {
+  kind: NoteKind
+  color: NoteColor | null
+  body: string
+  authorName: string | null
+  font: "hand" | "serif"
+  ink: string
+  doodle: string | null
+  drawing: string[]
+  x: number
+  y: number
+  rotation: number
+  hasPhoto: boolean
+}
+
+export interface CreatePinResponse {
+  id: string
+  wallDate: string
+}
+
+export class WallApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code: string,
+  ) {
+    super(message)
+    this.name = "WallApiError"
+  }
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
+}
+
+function readApiError(value: unknown, fallback: string): ApiErrorDetails {
+  if (
+    isRecord(value) &&
+    isRecord(value.error) &&
+    typeof value.error.code === "string" &&
+    typeof value.error.message === "string"
+  ) {
+    return { code: value.error.code, message: value.error.message }
+  }
+
+  return { code: "unknown_error", message: fallback }
+}
+
+function getDeviceToken(): string {
+  const existing = window.localStorage.getItem(deviceTokenKey)
+
+  if (existing && /^[a-f0-9]{64}$/.test(existing)) return existing
+
+  const bytes = window.crypto.getRandomValues(new Uint8Array(32))
+  const token = Array.from(bytes, (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("")
+
+  window.localStorage.setItem(deviceTokenKey, token)
+
+  return token
 }
 
 function isWallNote(value: unknown): value is WallNote {
@@ -37,7 +105,8 @@ function isWallNote(value: unknown): value is WallNote {
     typeof value.rotation === "number" &&
     Number.isFinite(value.rotation) &&
     (value.color === undefined ||
-      (typeof value.color === "string" && noteColors.includes(value.color))) &&
+      (typeof value.color === "string" &&
+        noteColors.some((color) => color === value.color))) &&
     (value.image === undefined || typeof value.image === "string") &&
     (value.doodle === undefined || typeof value.doodle === "string") &&
     (value.drawing === undefined ||
@@ -86,17 +155,47 @@ export async function fetchWall(
   const payload: unknown = await response.json()
 
   if (!response.ok) {
-    const message =
-      isRecord(payload) &&
-      isRecord(payload.error) &&
-      typeof payload.error.message === "string"
-        ? payload.error.message
-        : "The wall could not be loaded right now."
+    const error = readApiError(
+      payload,
+      "The wall could not be loaded right now.",
+    )
 
-    throw new Error(message)
+    throw new WallApiError(error.message, response.status, error.code)
   }
 
   return parseWallResponse(payload)
+}
+
+export async function createPin(
+  input: CreatePinInput,
+): Promise<CreatePinResponse> {
+  const response = await fetch("/api/pins", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ ...input, deviceToken: getDeviceToken() }),
+  })
+
+  const payload: unknown = await response.json()
+
+  if (!response.ok) {
+    const error = readApiError(
+      payload,
+      "Your note could not be added right now.",
+    )
+
+    throw new WallApiError(error.message, response.status, error.code)
+  }
+
+  if (
+    !isRecord(payload) ||
+    typeof payload.id !== "string" ||
+    typeof payload.wallDate !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(payload.wallDate)
+  ) {
+    throw new Error("The wall service returned an invalid pin response.")
+  }
+
+  return { id: payload.id, wallDate: payload.wallDate }
 }
 
 export function formatWallCountdown(resetsAt: string): string {

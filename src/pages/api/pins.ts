@@ -1,0 +1,236 @@
+import type { APIRoute } from "astro"
+
+import { env } from "cloudflare:workers"
+
+import { z } from "zod"
+
+import { WALL_CONFIG } from "../../config"
+
+import {
+  errorResponse,
+  jsonResponse,
+  logApiError,
+} from "../../lib/api-response"
+
+import { getManilaDate } from "../../lib/wall-date"
+
+export const prerender = false
+
+const pinKinds = ["sticky", "torn", "notebook", "polaroid", "card"] as const
+
+const pinColors = ["yellow", "pink", "blue", "green", "mustard"] as const
+
+const pinFonts = ["hand", "serif"] as const
+
+const pinInputSchema = z.object({
+  deviceToken: z.string().regex(/^[a-f0-9]{64}$/),
+
+  kind: z.enum(pinKinds),
+
+  color: z.enum(pinColors).nullable(),
+
+  body: z.string().min(1).max(220),
+
+  authorName: z.string().max(120).nullable(),
+
+  font: z.enum(pinFonts),
+
+  ink: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+
+  doodle: z.string().max(16).nullable(),
+
+  drawing: z.array(z.string().max(5000)).max(20),
+
+  x: z.number().min(0).max(WALL_CONFIG.logicalCanvasWidth),
+
+  y: z.number().min(0).max(WALL_CONFIG.logicalCanvasHeight),
+
+  rotation: z.number().min(-15).max(15),
+
+  hasPhoto: z.boolean(),
+})
+
+interface PinCounts {
+  wall_count: number
+
+  device_count: number
+}
+
+export const POST: APIRoute = async ({ request }) => {
+  let body: unknown
+
+  try {
+    body = await request.json()
+  } catch {
+    return errorResponse(
+      400,
+      "invalid_json",
+      "The request body must be valid JSON.",
+    )
+  }
+
+  const parsed = pinInputSchema.safeParse(body)
+
+  if (!parsed.success) {
+    return errorResponse(400, "invalid_pin", "The pin details are invalid.")
+  }
+
+  if (parsed.data.hasPhoto) {
+    return errorResponse(
+      501,
+      "photo_uploads_unavailable",
+      "Photo uploads are coming soon",
+    )
+  }
+
+  if (!env.OWNER_HASH_SALT) {
+    return errorResponse(
+      500,
+
+      "server_misconfigured",
+
+      "Pin creation is temporarily unavailable.",
+    )
+  }
+
+  const pin = parsed.data
+
+  const wallDate = getManilaDate()
+
+  const id = crypto.randomUUID()
+
+  const createdAt = new Date().toISOString()
+
+  const drawingJson = pin.drawing.length ? JSON.stringify(pin.drawing) : null
+
+  try {
+    const saltedToken = new TextEncoder().encode(
+      `${env.OWNER_HASH_SALT}:${pin.deviceToken}`,
+    )
+
+    const digest = await crypto.subtle.digest("SHA-256", saltedToken)
+
+    const ownerHash = Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, "0"),
+    ).join("")
+
+    const insert = await env.DB.prepare(
+      `INSERT INTO pins (
+        id, wall_date, kind, color, body, author_name, font, ink, doodle,
+        drawing_json, image_key, thumb_key, x_pct, y_pct, rotation, z_index,
+        owner_hash, status, created_at, moved_at
+      )
+      SELECT
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?,
+        COALESCE(
+          (SELECT MAX(z_index) + 1 FROM pins WHERE wall_date = ?),
+          1
+        ),
+        ?, 'active', ?, NULL
+      WHERE
+        (SELECT COUNT(*) FROM pins
+         WHERE wall_date = ? AND status = 'active') < ?
+        AND
+        (SELECT COUNT(*) FROM pins
+         WHERE wall_date = ? AND owner_hash = ?) < ?`,
+    )
+
+      .bind(
+        id,
+
+        wallDate,
+
+        pin.kind,
+
+        pin.color,
+
+        pin.body,
+
+        pin.authorName,
+
+        pin.font,
+
+        pin.ink,
+
+        pin.doodle,
+
+        drawingJson,
+
+        (pin.x / WALL_CONFIG.logicalCanvasWidth) * 100,
+
+        (pin.y / WALL_CONFIG.logicalCanvasHeight) * 100,
+
+        pin.rotation,
+
+        wallDate,
+
+        ownerHash,
+
+        createdAt,
+
+        wallDate,
+
+        WALL_CONFIG.dailyPinLimit,
+
+        wallDate,
+
+        ownerHash,
+
+        WALL_CONFIG.dailyDevicePinLimit,
+      )
+
+      .run()
+
+    if (insert.meta.changes !== 1) {
+      const counts = await env.DB.prepare(
+        `SELECT
+          (SELECT COUNT(*) FROM pins
+           WHERE wall_date = ? AND status = 'active') AS wall_count,
+          (SELECT COUNT(*) FROM pins
+           WHERE wall_date = ? AND owner_hash = ?) AS device_count`,
+      )
+
+        .bind(wallDate, wallDate, ownerHash)
+
+        .first<PinCounts>()
+
+      if (!counts) {
+        throw new Error("Unable to determine current wall pin counts.")
+      }
+
+      if (counts.device_count >= WALL_CONFIG.dailyDevicePinLimit) {
+        return errorResponse(
+          429,
+
+          "daily_pin_limit",
+
+          `You have reached your daily limit of ${WALL_CONFIG.dailyDevicePinLimit} pins.`,
+        )
+      }
+
+      if (counts.wall_count >= WALL_CONFIG.dailyPinLimit) {
+        return errorResponse(
+          409,
+
+          "wall_full",
+
+          "Today's wall has reached its pin limit.",
+        )
+      }
+
+      throw new Error("The pin was not inserted.")
+    }
+
+    return jsonResponse({ id, wallDate }, 201)
+  } catch (error) {
+    logApiError("POST /api/pins", error)
+
+    return errorResponse(
+      500,
+
+      "pin_unavailable",
+
+      "Your note could not be added right now.",
+    )
+  }
+}
