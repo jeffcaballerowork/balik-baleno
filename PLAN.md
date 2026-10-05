@@ -87,7 +87,7 @@ Mock content currently lives in `src/App.tsx` and moves to `src/data/mock.ts` wi
 | Page | Status | Visual diff (390×844 / 768×1024 / 1440×900) | DOM / behavior |
 |---|---|---|---|
 | Home | Pass | 0.0048% / 0.0010% / 0.0005% differing pixels (≤0.1%) | Normalized DOM matches; lightbox open/arrow/Escape and year-specific batch navigation smoke-tested |
-| Wall | Pass | 0.0099% / 0.0034% / 0.0016% differing pixels (≤0.1%) | Normalized DOM matches; zoomed-out state 0.0030%, note lightbox 0.0000%; pan, note drag, pointer-open, zoom, and Escape smoke-tested |
+| Wall | Pass | 0.0021% / 0.0001% / 0.0001% differing pixels (≤0.1%) | Normalized DOM matches; zoomed-out state 0.0030%, note lightbox 0.0000%; pan, note drag, pointer-open, zoom, and Escape smoke-tested |
 | Create | Pass | 0.0015% / 0.0000% / 0.0000% differing pixels (≤0.1%); paper and Draw states 0.0000% | Normalized DOM matches for all eight page/editor states; 220-character limit, paper/font/sticker/anonymous/drawing controls, mock pin-to-wall flow, and lightbox smoke-tested |
 | Archive | Pass | 0.0018% / 0.0000% / 0.0004% differing pixels (≤0.1%); another-day state 0.0000% | Normalized DOM matches all four states; month navigation, selected-day preview, note lightbox, and return-to-wall navigation smoke-tested |
 | News | Pass | 0.0039% / 0.0000% / 0.0000% differing pixels (≤0.1%) | Normalized DOM matches; all images loaded; “Leave it on the wall” CTA navigates to Create |
@@ -125,6 +125,13 @@ Checked the current official Astro Cloudflare integration and deployment guides 
 The current Astro docs confirm static prerendering is the default and adapters are needed for on-demand routes. The Cloudflare deployment guide identifies the adapter server entrypoint for Wrangler; Wrangler supports a Workers `assets` configuration for static delivery, and its current docs permit assets-only Workers without `main` (not appropriate when Astro API routes need the adapter). Cron is UTC and is dispatched to `scheduled()`, not an Astro route. These details agree with the requested Workers—not Pages—target, but the Astro/cron entrypoint seam must be verified again before Phase 5.
 
 The installed adapter enables Cloudflare Images and session KV by default. Neither is needed for this static mock-data phase, so `imageService: "passthrough"` and top-level `session: false` are configured to avoid implicitly requesting `IMAGES` or `SESSION` resources. D1 is intentionally not configured until Phase 4.
+
+### Phase 3 — mock-data Cloudflare Worker (complete; stop at gate)
+
+- Added `wrangler.jsonc` for the Astro Cloudflare Worker entrypoint and Workers static assets. It uses compatibility date `2026-10-05`, the Astro deployment guide's `global_fetch_strictly_public` compatibility flag, a custom 404 asset, and `drop-trailing-slash` to honor Astro's `trailingSlash: "never"`.
+- `pnpm wrangler types` completed. `pnpm run check` passed with 0 errors, warnings, or hints; `pnpm run build` generated all 37 static pages; Wrangler dry-run read 94 assets; `pnpm wrangler deploy` succeeded.
+- Deployed at <https://balik-baleno.jeffcaballero-work.workers.dev> (Worker version `d4ae47d4-5aa0-41ac-bd2b-abd4d1d2df38`). Browser smoke tests returned 200 for all eight routes plus batch years 2016 and 1996, preserved slashless URLs and the footer disclaimer, confirmed `noindex, nofollow` on the workers.dev preview, and reported no page or console errors.
+- No D1 bindings, API routes, or cron triggers were added. Stop here pending approval for Phase 4.
 
 ## Risks and regression checks
 
