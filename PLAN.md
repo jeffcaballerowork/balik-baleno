@@ -118,6 +118,10 @@ Checked the current official Astro Cloudflare integration and deployment guides 
 - Astro Cloudflare integration: <https://docs.astro.build/en/guides/integrations-guide/cloudflare/>
 - Astro Cloudflare deployment: <https://docs.astro.build/en/guides/deploy/cloudflare/>
 - Astro on-demand rendering: <https://docs.astro.build/en/guides/on-demand-rendering/>
+- Cloudflare Worker secrets: <https://developers.cloudflare.com/workers/configuration/secrets/>
+- D1 Worker bindings: <https://developers.cloudflare.com/d1/worker-api/>
+- D1 migrations: <https://developers.cloudflare.com/d1/reference/migrations/>
+- D1 Wrangler commands: <https://developers.cloudflare.com/d1/wrangler-commands/>
 - Wrangler configuration: <https://developers.cloudflare.com/workers/wrangler/configuration/>
 - Workers static assets: <https://developers.cloudflare.com/workers/static-assets/binding/>
 - Cron Triggers: <https://developers.cloudflare.com/workers/configuration/cron-triggers/>
@@ -141,7 +145,8 @@ The installed adapter enables Cloudflare Images and session KV by default. Neith
 - `wrangler.jsonc` now enables Workers logs/traces and declares the production D1 binding. `OWNER_HASH_SALT` is not stored in config; configure a local `.dev.vars` secret and a Cloudflare secret before enabling writes.
 - Applied `0001_initial_schema.sql` to both local D1 and the remote APAC database. Verified all four application tables exist and both databases contain zero pins; no seed/mock rows were applied remotely.
 - Regenerated the compact `worker-configuration.d.ts` using `pnpm wrangler types --include-runtime false`; Astro check reports 0 errors/warnings/hints, build still produces 37 static pages, and Wrangler dry-run recognizes `env.DB`.
-- UI regression check after schema/config changes: Home at 390×844 differs from the Phase 0 baseline by 0.0048% pixels (≤0.1%); browser reported no console/page errors. No UI files or styles changed.
+- UI regression checks after schema/config and API changes: Home screenshots differ from Phase 0 by 0.0048% / 0.0009% / 0.0004% at 390×844 / 768×1024 / 1440×900 (≤0.1%); browser reported no console/page errors. No UI files or styles changed.
+- Added on-demand `GET /api/wall`: it validates optional calendar dates, reads active pins with a parameterized D1 query, and computes the next midnight PHT `resetsAt`. Local smoke tests returned an empty wall with `2026-10-05T16:00:00.000Z`, returned `2026-10-04T16:00:00.000Z` for that selected date, and rejected `2026-02-30` with JSON 400.
 - Current Astro on-demand docs support individual `export const prerender = false` endpoints while retaining the static site output; use the Cloudflare adapter runtime binding for D1.
 - Verified current Cloudflare D1 migration, query, and Wrangler command documentation. Use prepared statements with bound values and distinguish local (`--local`) versus remote operations.
 
