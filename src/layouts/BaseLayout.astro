@@ -2,6 +2,7 @@
 import Announcement from "../components/Announcement.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
+import NoteLightbox from "../components/NoteLightbox";
 import "../styles/global.css";
 
 interface Props {
@@ -49,6 +50,7 @@ const activePath = Astro.url.pathname;
       <Header activePath={activePath} />
       <slot />
       <Footer />
+      <NoteLightbox client:idle />
     </div>
   </body>
 </html>

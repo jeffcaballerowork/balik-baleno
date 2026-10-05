@@ -1,0 +1,153 @@
+---
+import Icon from "../components/Icon.astro";
+import HeroWall from "../components/HeroWall";
+import { events, graduationPhoto, homeMock, newsItems } from "../data/mock";
+---
+
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-kicker"><span class="live-dot"></span> A PLACE FOR EVERY VERSION OF US</div>
+    <h1>Some things<br />stay <em>with us.</em></h1>
+    <p class="hero-description">
+      The old halls. The familiar faces. The stories we still tell. Welcome to the little corner of the internet that feels like coming home.
+    </p>
+    <div class="hero-actions">
+      <button class="button button-primary" data-nav="/create">
+        <Icon name="pin" size={19} /> Pin a note <Icon name="arrow" size={17} />
+      </button>
+      <button class="button button-outline" data-nav="/wall">
+        Explore the wall <Icon name="arrow" size={17} />
+      </button>
+    </div>
+    <div class="hero-bottom">
+      <div class="avatar-stack">
+        {homeMock.previewAvatarInitials.map(initials => <span>{initials}</span>)}
+      </div>
+      <span>Good company, old and new.<br /><strong>{homeMock.alumniCount} alumni</strong> already here</span>
+    </div>
+  </div>
+  <HeroWall client:visible />
+</section>
+<div class="ticker">
+  <div class="ticker-inner">
+    <span>YOUR STORIES</span><i>✳</i><span>YOUR PEOPLE</span><i>✳</i><span>YOUR PLACE</span><i>✳</i>
+    <span>BALIK BALENO</span><i>✳</i><span>YOUR STORIES</span><i>✳</i><span>YOUR PEOPLE</span>
+  </div>
+</div>
+<section class="intro-section content-width">
+  <div class="intro-side">
+    <span class="small-star">✳</span>
+    <span>BALIK BALENO<br />WHERE WE ALWAYS BELONG</span>
+  </div>
+  <div class="intro-copy">
+    No matter how long it&apos;s been, <em>you still belong here.</em>
+    <p>
+      A space to leave a note, find an old friend, celebrate a win, or simply remember what it felt like to be here together.
+    </p>
+  </div>
+</section>
+<section class="home-section news-section content-width">
+  <div class="section-heading">
+    <div>
+      <span class="eyebrow"><span class="eyebrow-line"></span>THE LATEST</span>
+      <h2>Notes from around here</h2>
+      <p>A little news from the place that started it all.</p>
+    </div>
+    <button class="text-link" data-nav="/news">All news <Icon name="arrow" size={18} /></button>
+  </div>
+  <div class="news-grid">
+    {
+      newsItems.map((item, index) => (
+        <button class="news-card" data-nav="/news">
+          <div class="news-card-image">
+            <img src={item.image} alt="School and alumni memories" />
+            <span class="image-index">0{index + 1} / 03</span>
+          </div>
+          <div class="news-meta"><span>{item.tag}</span><span>{item.date}</span></div>
+          <h3>{item.title}</h3>
+          <span class="card-link">Read the story <Icon name="arrow" size={17} /></span>
+        </button>
+      ))
+    }
+  </div>
+</section>
+<section class="events-band">
+  <div class="content-width">
+    <div class="section-heading">
+      <div>
+        <span class="eyebrow"><span class="eyebrow-line"></span>SAVE THE DATE</span>
+        <h2>See you there?</h2>
+        <p>The best stories are the ones we make together.</p>
+      </div>
+      <button class="text-link" data-nav="/events">All events <Icon name="arrow" size={18} /></button>
+    </div>
+    <div class="event-row">
+      {
+        events.slice(0, 2).map(event => (
+          <div class="event-mini">
+            <div class="event-date"><span>{event.month}</span><strong>{event.day}</strong></div>
+            <div>
+              <span class="event-label">{event.category}</span>
+              <h3>{event.title}</h3>
+              <p>{event.detail}</p>
+            </div>
+            <button aria-label={`View ${event.title}`} data-nav="/events">
+              <Icon name="arrow" size={20} />
+            </button>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+<section class="home-section batch-section content-width">
+  <div class="batch-copy">
+    <span class="eyebrow"><span class="eyebrow-line"></span>OLD CLASSMATES, NEW CHAPTERS</span>
+    <h2>Find your <em>people.</em></h2>
+    <p>Some friendships pick up right where you left off. Find your graduating class and see who&apos;s here.</p>
+    <button class="button button-primary" data-nav="/batches">
+      Explore all batches <Icon name="arrow" size={18} />
+    </button>
+  </div>
+  <div class="batch-year-card">
+    <div class="batch-year-top"><span>CLASS OF...</span><Icon name="spark" size={19} /></div>
+    <div class="year-grid">
+      {
+        [2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015, 2014, 2013].map(year => (
+          <button data-nav={`/batches/${year}`}>{year}</button>
+        ))
+      }
+    </div>
+    <div class="batch-year-foot">Your year is waiting for you. <span>↗</span></div>
+  </div>
+</section>
+<section class="fame-section">
+  <div class="content-width fame-inner">
+    <div class="fame-image">
+      <img src={graduationPhoto} alt="Graduates celebrating together" />
+      <span class="photo-tape"></span>
+    </div>
+    <div class="fame-copy">
+      <span class="eyebrow"><span class="eyebrow-line"></span>WALL OF FAME</span>
+      <h2>Look how far<br />we&apos;ve <em>come.</em></h2>
+      <p>
+        Artists, everyday heroes, big dreamers, quiet changemakers. Here&apos;s to the people who started right here and went on to make their mark.
+      </p>
+      <button class="text-link" data-nav="/news">Meet our alumni <Icon name="arrow" size={19} /></button>
+    </div>
+  </div>
+</section>
+<section class="join-section content-width">
+  <span class="join-decoration">✳</span>
+  <span class="eyebrow">THE DOOR&apos;S ALWAYS OPEN</span>
+  <h2>Come on in.<br /><em>We&apos;ve missed you.</em></h2>
+  <p>One community. A thousand stories. And plenty of room for yours.</p>
+  <button class="button button-cream" data-nav="/create">
+    Leave your first note <Icon name="arrow" size={18} />
+  </button>
+  <div class="join-stats">
+    <span><strong>{homeMock.alumniCount}</strong> alumni connected</span>
+    <span class="stats-divider"></span>
+    <span><strong>{homeMock.noteCount}</strong> notes pinned</span>
+  </div>
+</section>

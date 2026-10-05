@@ -13,7 +13,9 @@
   "dependencies": {
     "@astrojs/cloudflare": "14.3.3",
     "@astrojs/react": "7.0.0",
+    "@nanostores/react": "^2.0.1",
     "astro": "7.3.5",
+    "nanostores": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

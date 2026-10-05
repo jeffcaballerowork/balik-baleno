@@ -82,6 +82,14 @@ Mock content currently lives in `src/App.tsx` and moves to `src/data/mock.ts` wi
 5. **Phase 4 — D1 and wall API:** add migrations and typed, Zod-validated JSON endpoints. Add the one shared logical wall-size/coordinate constants module. Use parameterized D1 statements, `OWNER_HASH_SALT` as a secret, `.dev.vars` only for local secrets, and never apply mock seed data remotely. Wire features incrementally in this order: wall reads/countdown, pin creation, owner/time-limited position changes, reactions, reports, archive listing/day reads. Keep the UI unchanged. Photo submissions return 501 until R2 exists. Before implementation, decide the still-unspecified daily cap (150), per-device daily limit (5), and any other quota defaults; do not silently pick policy values. Report local/remote migration results and a manual test script, then stop.
 6. **Phase 5 — archive cron:** use the UTC `0 16 * * *` trigger for midnight PHT. Cloudflare's current cron documentation requires a Worker module `scheduled()` handler and Wrangler-managed `triggers.crons`. Astro's deployment guide names `@astrojs/cloudflare/entrypoints/server` as the Worker `main`, but the current Astro adapter guide does not document an Astro page/API `scheduled()` hook. Therefore prefer a small companion Worker sharing the same D1 binding unless the current adapter documentation at implementation time documents a supported custom-entrypoint composition. Upsert the wall that just ended in `Asia/Manila`; make the job idempotent.
 
+### Phase 2 progress
+
+| Page | Status | Visual diff (390×844 / 768×1024 / 1440×900) | DOM / behavior |
+|---|---|---|---|
+| Home | Pass | 0.0340% / 0.0259% / 0.0138% differing pixels (≤0.1%) | Normalized DOM matches; lightbox open/arrow/Escape and year-specific batch navigation smoke-tested |
+
+Home's static content is in `src/components/HomePage.astro`; only its preview wall hydrates through `HeroWall` (`client:visible`). `NoteCard` is shared, and the layout-level `NoteLightbox` uses a nanostores atom (`client:idle`). The data module is marked `MOCK, replace before public launch` and contains the sample notes, news, events, member names, and Home preview counts/initials. The Astro dev toolbar is disabled so it cannot contaminate screenshot comparisons; it is not part of the production page.
+
 ## Current platform documentation checked
 
 Checked the current official Astro Cloudflare integration and deployment guides and Cloudflare Wrangler configuration, Workers static-assets, and Cron Triggers documentation before selecting a deployment direction:
