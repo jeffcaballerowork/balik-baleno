@@ -1,7 +1,7 @@
 export const WALL_CONFIG = {
   dailyPinLimit: 150,
 
-  dailyDevicePinLimit: 2,
+  dailyDevicePinLimit: 5,
 
   pinMoveWindowMs: 10 * 60 * 1000,
 

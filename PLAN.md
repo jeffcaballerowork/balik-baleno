@@ -1,5 +1,18 @@
 # Balik Baleno migration plan
 
+## Status summary
+
+| Phase | Status | Evidence / remaining work |
+|---|---|---|
+| 0 — Baseline | Done | Baseline app tagged and route/state screenshot + normalized DOM set recorded below. |
+| 1 — Shell scaffold | Done | Shell, CSS, routes, and behavior comparisons passed; Phase 3 deployment included the shell. |
+| 2 — Page ports | Done | All eight pages passed the recorded screenshot threshold and normalized DOM checks below. |
+| 3 — Mock-data Worker | Deployed | Initial Worker deployment is recorded below; the currently deployed version still needs production verification. |
+| 4 — D1 and wall API | APIs verified locally; remote schema verified | All four application tables exist remotely and migration status is current. The Phase 4 Worker/API code is not deployed. |
+| 5 — Archive cron | Verified locally | Scheduled handler and idempotency passed local tests; the companion Worker does not exist in the verified Cloudflare account. |
+
+Production deployment and launch readiness are tracked in the [Production checklist](#production-checklist). The site must remain `noindex, nofollow` until public launch is approved.
+
 ## Phase 0 — baseline (complete)
 
 - The untouched Vite + React baseline is tagged `figma-make-baseline` at commit `a65ec42`.
@@ -47,7 +60,7 @@
 
 All page routes are prerendered; API endpoints opt into on-demand rendering with `export const prerender = false`. Do not add Astro view transitions or `ClientRouter`.
 
-## Phase 1 — shell scaffold (complete; awaiting approval)
+## Phase 1 — shell scaffold (done)
 
 The Vite app has been replaced by an Astro `7.3.5` static-output scaffold using `@astrojs/react 7.0.0`, `@astrojs/cloudflare 14.3.3`, React 19, Tailwind v4 via `@tailwindcss/vite`, and strict TypeScript. `.mise.toml` pins the already available Node `22.23.2` and pnpm `12.8.1`. Playwright `1.63.0` and Chromium are installed for visual regression work.
 
@@ -75,12 +88,12 @@ Mock content currently lives in `src/App.tsx` and moves to `src/data/mock.ts` wi
 
 ### Phase-by-phase execution
 
-1. **Phase 0 (this document and baseline only):** tag and run the untouched app; save the route/state screenshots and normalized DOM. Stop for approval.
-2. **Phase 1 — scaffold and shell (complete):** Astro routes/layout, strict TypeScript, shared shell components, Cloudflare adapter, Tailwind v4 Vite plugin, verbatim global CSS move, Figma cleanup, and confirmed batch paths are in place. Shell DOM and computed style checks match baseline at all three viewport widths. Stop for approval before Phase 2.
-3. **Phase 2 — pages, one at a time:** Home → Wall → Create → Archive → News → Events → Batches → Batch. Move only static sections into Astro, hydrate only the islands mapped above, and move shared sample data without changing visual output. After each page, compare screenshots at all three widths and normalized DOM with baseline, target ≤0.1% changed pixels, list/fix all differences, inspect browser console/hydration warnings, and commit that page. Stop with a page-by-page pass/fail table.
-4. **Phase 3 — mock-data Cloudflare Worker:** add `wrangler.jsonc` for Worker static assets (not Pages), build/check, and verify `pnpm wrangler deploy`; report the workers.dev URL and stop.
-5. **Phase 4 — D1 and wall API:** add migrations and typed, Zod-validated JSON endpoints. Add the one shared logical wall-size/coordinate constants module. Use parameterized D1 statements, `OWNER_HASH_SALT` as a secret, `.dev.vars` only for local secrets, and never apply mock seed data remotely. Wire features incrementally in this order: wall reads/countdown, pin creation, owner/time-limited position changes, reactions, reports, archive listing/day reads. Keep the UI unchanged. Photo submissions return 501 until R2 exists. Before implementation, decide the still-unspecified daily cap (150), per-device daily limit (5), and any other quota defaults; do not silently pick policy values. Report local/remote migration results and a manual test script, then stop.
-6. **Phase 5 — archive cron:** use the UTC `0 16 * * *` trigger for midnight PHT. Cloudflare's current cron documentation requires a Worker module `scheduled()` handler and Wrangler-managed `triggers.crons`. Astro's deployment guide names `@astrojs/cloudflare/entrypoints/server` as the Worker `main`, but the current Astro adapter guide does not document an Astro page/API `scheduled()` hook. Therefore prefer a small companion Worker sharing the same D1 binding unless the current adapter documentation at implementation time documents a supported custom-entrypoint composition. Upsert the wall that just ended in `Asia/Manila`; make the job idempotent.
+1. **Phase 0 — baseline (done):** tagged and ran the untouched app; saved route/state screenshots and normalized DOM.
+2. **Phase 1 — scaffold and shell (done):** Astro routes/layout, strict TypeScript, shared shell components, Cloudflare adapter, Tailwind v4 Vite plugin, verbatim global CSS move, Figma cleanup, and confirmed batch paths are in place. Shell DOM and computed style checks match baseline at all three viewport widths.
+3. **Phase 2 — pages (done):** Home → Wall → Create → Archive → News → Events → Batches → Batch. All pages were compared at the three widths, normalized DOM was checked, interactive states were smoke-tested, and the recorded results are below.
+4. **Phase 3 — mock-data Cloudflare Worker (deployed):** Worker static assets (not Pages), build/check, and the initial `pnpm wrangler deploy` were verified. The currently deployed version must be checked before considering the production API current.
+5. **Phase 4 — D1 and wall API (implemented and locally verified):** migrations and typed, Zod-validated JSON endpoints use parameterized D1 statements; mock seed data is local only. Photo submissions return 501 until R2 exists. The resolved quotas are 150 pins per wall day and 5 per device per day. Remote schema application was recorded; verify current production state in the checklist below.
+6. **Phase 5 — archive cron (implemented and locally verified):** uses the UTC `0 16 * * *` trigger for midnight PHT. Cloudflare's current cron documentation requires a Worker module `scheduled()` handler and Wrangler-managed `triggers.crons`. The Astro adapter does not document a supported scheduled-handler composition, so a companion Worker shares the D1 binding and upserts the wall that just ended in `Asia/Manila` idempotently. Production deployment and trigger registration remain to be verified.
 
 ### Phase 2 progress
 
@@ -99,9 +112,11 @@ Home's static content is in `src/components/HomePage.astro`; only its preview wa
 
 The Freedom Wall heading and frame are static Astro markup in `src/components/WallPage.astro`; `WallBoard` is a `client:only="react"` island with its original pan, pinch, zoom, and note-drag logic.
 
-`CreateEditor` is the `client:load` island. Until Phase 4 adds the API, created mock notes are kept in session storage and loaded onto the mock wall, preserving the original create-then-view interaction without making the sample note permanent.
+`CreateEditor` is the `client:load` island. During the Phase 2 page port, created mock notes were kept in session storage and loaded onto the mock wall; Phase 4 later wired the same editor to the D1 API.
 
-The Archive heading stays static in `src/components/ArchivePage.astro`; `ArchiveCalendar` is the `client:only="react"` island because its calendar and preview depend on the current date and selected day. Archive notes remain mock data and open in the layout-level lightbox.
+#### Archive — Phase 2 page port
+
+The Archive heading stays static in `src/components/ArchivePage.astro`; `ArchiveCalendar` is the `client:only="react"` island because its calendar and preview depend on the current date and selected day. In the Phase 2 port, archive notes were mock data and opened in the layout-level lightbox; Phase 4 later connected the same UI to D1, as recorded in the Phase 4 implementation notes below.
 
 News is entirely static Astro markup in `src/components/NewsPage.astro`; its cards use the shared mock news dataset and the call to action routes to Create.
 
@@ -130,16 +145,16 @@ The current Astro docs confirm static prerendering is the default and adapters a
 
 The installed adapter enables Cloudflare Images and session KV by default. Neither is needed for this static mock-data phase, so `imageService: "passthrough"` and top-level `session: false` are configured to avoid implicitly requesting `IMAGES` or `SESSION` resources. D1 is intentionally not configured until Phase 4.
 
-### Phase 3 — mock-data Cloudflare Worker (complete; stop at gate)
+### Phase 3 — mock-data Cloudflare Worker (deployed)
 
 - Added `wrangler.jsonc` for the Astro Cloudflare Worker entrypoint and Workers static assets. It uses compatibility date `2026-10-05`, the Astro deployment guide's `global_fetch_strictly_public` compatibility flag, a custom 404 asset, and `drop-trailing-slash` to honor Astro's `trailingSlash: "never"`.
 - `pnpm wrangler types` completed. `pnpm run check` passed with 0 errors, warnings, or hints; `pnpm run build` generated all 37 static pages; Wrangler dry-run read 94 assets; `pnpm wrangler deploy` succeeded.
-- Deployed at <https://balik-baleno.jeffcaballero-work.workers.dev> (Worker version `d4ae47d4-5aa0-41ac-bd2b-abd4d1d2df38`). Browser smoke tests returned 200 for all eight routes plus batch years 2016 and 1996, preserved slashless URLs and the footer disclaimer, confirmed `noindex, nofollow` on the workers.dev preview, and reported no page or console errors.
+- Initial deployment recorded at <https://balik-baleno.jeffcaballero-work.workers.dev> (Worker version `d4ae47d4-5aa0-41ac-bd2b-abd4d1d2df38`). Browser smoke tests returned 200 for all eight routes plus batch years 2016 and 1996, preserved slashless URLs and the footer disclaimer, confirmed `noindex, nofollow` on the workers.dev preview, and reported no page or console errors. This is not evidence that the current Phase 4 API code is deployed.
 - No D1 bindings, API routes, or cron triggers were added in Phase 3. The user approved continuing into Phase 4.
 
-### Phase 4 — D1 and wall API (complete)
+### Phase 4 — D1 and wall API (implemented; locally verified, production deployment unverified)
 
-- User-approved limits: 150 pins per wall day and 2 pins per device per day. The 150-pin ceiling keeps to the supplied conservative limit for the fixed logical canvas; the per-device limit follows the user's choice.
+- Resolved limits: 150 pins per wall day and 5 pins per device per day. The 150-pin ceiling keeps to the supplied conservative limit for the fixed logical canvas; `src/config.ts` is configured with both approved limits.
 - Provisioned the new APAC production database `balik-baleno-db`, bound as `DB`. The production database remains unseeded.
 - Added the initial schema migration and `src/config.ts` with the two quotas and shared 1480×1130 logical canvas dimensions. The migration defines pins, reactions, reports, and walls.
 - `wrangler.jsonc` now enables Workers logs/traces and declares the production D1 binding. `OWNER_HASH_SALT` is not stored in config; configure a local `.dev.vars` secret and a Cloudflare secret before enabling writes.
@@ -149,9 +164,9 @@ The installed adapter enables Cloudflare Images and session KV by default. Neith
 - Added the hard-coded `--local` `pnpm run seed:local` script for development fixtures. It seeds 20 existing mock notes and their sample reactions on each of the latest three wall dates. Verified 60 local pins and 2,640 local reactions; remote D1 remains at zero pins.
 - Wired Home's wall preview and `/wall` notes to `GET /api/wall`, and replaced the wall countdown placeholder with the API's reset time. The local response returns 20 pins for `2026-10-04`, preserves their order, geometry, colors, and reset timestamp, and rejects an invalid date with JSON 400. Sample image URLs are exposed only from local seed rows.
 - Rechecked Home and Wall at all three baseline viewports. With the fixed browser clock and selected-day reset fixture, changed pixels (any RGB channel delta >8) were 0.0160% / 0.0086% / 0.0044% for Home and 0.0405% / 0.0892% / 0.0512% for Wall (all ≤0.1%). The API-driven countdown intentionally differs from the old mock countdown. No browser console or page errors remained after restarting the stale local dev server.
-- Added `POST /api/pins` with Zod validation, a localStorage device token, salted SHA-256 ownership hashing, and a single conditional insert enforcing the 150-active-pin wall cap and two-pin device limit. IDs and z-order are assigned by the server; owner hashes are not returned. Photo-selected requests return HTTP 501 without storing image data.
+- Added `POST /api/pins` with Zod validation, a localStorage device token, salted SHA-256 ownership hashing, and a single conditional insert enforcing the 150-active-pin wall cap and five-pin device limit. IDs and z-order are assigned by the server; owner hashes are not returned. Photo-selected requests return HTTP 501 without storing image data.
 - Wired the existing Create editor to submit to D1 and navigate to `/wall` only after success. API errors use the existing preview caption, including the exact “Photo uploads are coming soon” message.
-- Local tests accepted two pins for one device, rejected its third with 429, returned 501 for a photo pin, and verified successful editor submission renders on `/wall` with a 64-character localStorage token. Temporary test pins were removed; the 60 development fixture pins remain local. The Create page screenshot differs from baseline by 0.0051% / 0% / 0% at 390×844 / 768×1024 / 1440×900 (≤0.1%); no page errors were observed.
+- Historical quota test: before the device limit was resolved to five, local tests accepted two pins for one device and rejected its third with 429. After updating `src/config.ts` to five, local API verification accepted exactly five pins and returned 429 for the sixth; all five temporary pins were removed. The earlier run also returned 501 for a photo pin and verified successful editor submission renders on `/wall` with a 64-character localStorage token. The development fixtures remain local. The Create page screenshot differs from baseline by 0.0051% / 0% / 0% at 390×844 / 768×1024 / 1440×900 (≤0.1%); no page errors were observed.
 - Added `PATCH /api/pins/:id/position`. It hashes the device token, updates only active pins on the current Manila wall date, and enforces the ten-minute creation window in both the check and conditional update. The wall read endpoint returns a non-sensitive `canMove` flag only when the caller's token owns an in-window pin.
 - The Wall island now sends its device token in a request header, persists only eligible note drags, and restores the prior position while showing the API message if a save fails. Other drags remain local exploration and do not change the existing wall behavior.
 - Verified a created pin's drag persisted from (520, 320) to (578.18, 352.73); another token received 403, an expired pin received 403, and a previous-day pin received 404. Anonymous wall reads did not disclose the `canMove` capability. The temporary movement pin was removed.
@@ -165,8 +180,16 @@ The installed adapter enables Cloudflare Images and session KV by default. Neith
 - Wired the shared lightbox Report action to the API for D1-backed notes; successful reports show the existing confirmation text, while failures are logged and shown inline. Local mock/archive notes retain their original client-only confirmation until the archive API is connected.
 - Verified invalid tokens return 400, missing pins return 404, and a valid report returns 201. Browser interaction confirmed “Reported · thank you”; the pre-action lightbox screenshot differs by 0.0000%, with no page or console errors. Temporary report rows were removed; local and remote report counts are both zero.
 - `pnpm run check` reports 0 errors, warnings, or hints; `pnpm run build` completes successfully with all 37 static pages and the Worker API entrypoints.
+- Extracted the shared D1 pin/reaction mapping into `src/lib/wall-pins.ts` so current-wall and archive reads preserve identical note fields, counts, device reaction state, and movement eligibility without duplicating conversion logic.
+- Added `GET /api/archive/days?month=YYYY-MM` using grouped active-pin counts and `GET /api/archive/:date` using the shared pin reader. Both validate inputs and return typed JSON; archived pins keep their reaction data, while movement eligibility remains false for past wall dates.
+- Wired `ArchiveCalendar` to load month counts and the selected date from the API. Manila-local dates determine the default selection and disabled future days; calendar dots appear only for dates with active pins, the displayed note count is real, and archive notes open in the shared lightbox. Errors are logged and shown without changing normal layout.
+- Updated the local-only seed script to refresh only `local-seed` rows for the latest five dates: 20 notes for today and 13 filtered archive notes per prior date, preserving the existing Archive baseline content. Local seed contained 72 pins and 3,168 reactions across October 1–5, 2026; temporary reports were absent. Production D1 was recorded at zero pins, reactions, and reports.
+- Verified October month counts (13 pins on October 1–4 and 20 on October 5), selected-date results (13 notes), real Archive lightbox reaction counts, and 400 responses for invalid month/date values. Archive screenshot diffs at 390×844 / 768×1024 / 1440×900 were 0.0063% / 0.0004% / 0.0041%; another-day-selected was 0.0000%. Rechecked Home/Wall after the shared-reader extraction: Home 0.0041% / 0.0007% / 0.0002%; Wall 0.0080% / 0.0060% / 0.0031%; lightbox 0.0000%. All were within the ≤0.1% limit with no browser errors.
+- `pnpm run check` reported 0 errors, warnings, or hints; `pnpm run build` completed successfully with all 37 static pages and the Worker API entrypoints.
+- Current Astro on-demand docs support individual `export const prerender = false` endpoints while retaining static site output; API handlers use the Cloudflare adapter runtime binding for D1.
+- Current Cloudflare D1 migration, query, and Wrangler command documentation was checked. Prepared statements with bound values are used; local (`--local`) and remote operations are kept distinct.
 
-### Phase 5 — daily archive cron (complete)
+### Phase 5 — daily archive cron (implemented; locally verified, production deployment unverified)
 
 - Current Cloudflare Cron Trigger docs specify UTC scheduling and a `scheduled()` module handler; the installed Wrangler 4.147.0 schema supports top-level `triggers.crons`, and its `wrangler dev --test-scheduled` endpoint allows local event tests with explicit cron/time values.
 - Current Astro Cloudflare adapter docs prescribe `@astrojs/cloudflare/entrypoints/server` as the fetch entrypoint and do not document a scheduled-handler extension. Added a small companion Worker instead of wrapping adapter internals; it uses the same existing D1 binding and does not change Astro request/static-asset routing.
@@ -175,16 +198,24 @@ The installed adapter enables Cloudflare Images and session KV by default. Neith
 - Generated companion binding/runtime declarations using Wrangler 4.147.0. Local dry-run bundles the companion Worker and recognizes `env.DB`; no production deployment was performed.
 - Local scheduled-event verification at `2026-10-05T16:00:00Z` upserted `2026-10-05` with 20 pins. Replaying the same event left one row with the same count/timestamp. A simulated `2026-10-06T16:00:00Z` event created a zero-count row for `2026-10-06`. Temporary test rows were removed afterward; production D1 was not touched.
 - Manual local test: start `pnpm run dev:cron`, then request `http://127.0.0.1:8788/cdn-cgi/local/scheduled?cron=0+16+*+*+*&time=1791216000000&format=json`. The local Worker returns a successful scheduled-event outcome; query local D1's `walls` table to inspect the finalized day.
-- `pnpm run check` and `pnpm run build` pass; Home, Wall, and Archive screenshots remain within the established ≤0.1% baseline tolerance.
+- `pnpm run check` and `pnpm run build` passed; Home, Wall, and Archive screenshots remained within the established ≤0.1% baseline tolerance.
 - References: <https://developers.cloudflare.com/workers/configuration/cron-triggers/>, <https://developers.cloudflare.com/workers/runtime-apis/handlers/scheduled/>, <https://developers.cloudflare.com/workers/examples/cron-trigger/>, <https://developers.cloudflare.com/workers/wrangler/configuration/>, <https://docs.astro.build/en/guides/integrations-guide/cloudflare/>, <https://docs.astro.build/en/guides/deploy/cloudflare/>.
-- Extracted the shared D1 pin/reaction mapping into `src/lib/wall-pins.ts` so current-wall and archive reads preserve identical note fields, counts, device reaction state, and movement eligibility without duplicating conversion logic.
-- Added `GET /api/archive/days?month=YYYY-MM` using grouped active-pin counts and `GET /api/archive/:date` using the shared pin reader. Both validate inputs and return typed JSON; archived pins keep their reaction data, while movement eligibility remains false for past wall dates.
-- Wired `ArchiveCalendar` to load month counts and the selected date from the API. Manila-local dates determine the default selection and disabled future days; calendar dots appear only for dates with active pins, the displayed note count is real, and archive notes open in the shared lightbox. Errors are logged and shown without changing normal layout.
-- Updated the local-only seed script to refresh only `local-seed` rows for the latest five dates: 20 notes for today and 13 filtered archive notes per prior date, preserving the existing Archive baseline content. Local seed now contains 72 pins and 3,168 reactions across October 1–5, 2026; temporary reports are absent. Production D1 remains at zero pins, reactions, and reports.
-- Verified October month counts (13 pins on October 1–4 and 20 on October 5), selected-date results (13 notes), real Archive lightbox reaction counts, and 400 responses for invalid month/date values. Archive screenshot diffs at 390×844 / 768×1024 / 1440×900 are 0.0063% / 0.0004% / 0.0041%; another-day-selected is 0.0000%. Rechecked Home/Wall after the shared-reader extraction: Home 0.0041% / 0.0007% / 0.0002%; Wall 0.0080% / 0.0060% / 0.0031%; lightbox 0.0000%. All are within the ≤0.1% limit with no browser errors.
-- `pnpm run check` reports 0 errors, warnings, or hints; `pnpm run build` completes successfully with all 37 static pages and the Worker API entrypoints.
-- Current Astro on-demand docs support individual `export const prerender = false` endpoints while retaining the static site output; use the Cloudflare adapter runtime binding for D1.
-- Verified current Cloudflare D1 migration, query, and Wrangler command documentation. Use prepared statements with bound values and distinguish local (`--local`) versus remote operations.
+
+## Production checklist
+
+The main Worker is already live at <https://balik-baleno.jeffcaballero-work.workers.dev/>. Do not treat deployment as a first deploy. Keep the `noindex, nofollow` robots directive until public launch is explicitly approved.
+
+| Item | Evidence/status |
+|---|---|
+| Cloudflare account and configured IDs | Verified with `pnpm wrangler whoami`: account ID `c4d3e2c03d8f5139ee19c8a31c31af98` is now in `wrangler.jsonc`. Remote D1 listing confirms `balik-baleno-db` is `d65dbf1e-4e1c-422f-b15b-18e15a25f105`, matching the config. No error 7403 occurred; the token reports D1 write access. |
+| `OWNER_HASH_SALT` production secret | Missing: `pnpm wrangler secret list --name balik-baleno --format json` returned an empty list. The value was not requested or exposed. |
+| Remote D1 schema | Verified: remote migration listing reports no migrations to apply; read-only schema inventory found `pins`, `reactions`, `reports`, and `walls`. |
+| Remote D1 content | Verified: `pins`, `reactions`, `reports`, and `walls` each contain zero rows. No seed data is present. |
+| Main Worker/API | The main Worker is live, but its latest recorded deployment is the Phase 3 version `d4ae47d4-5aa0-41ac-bd2b-abd4d1d2df38`, created `2026-10-05T03:01:27Z`, before the database was created. The current Phase 4 API build is not deployed; defer the requested `/api/wall` check until approval. |
+| Archive companion Worker | Missing: Wrangler reports `balik-baleno-archive` does not exist in the verified account (API code 10007). The configured `0 16 * * *` schedule has only been tested locally; no production trigger is registered. |
+| Public launch | Not approved. Keep `noindex, nofollow`; mock content and the unofficial-site disclaimer remain. |
+
+After read-only checks, the remaining production actions are: set `OWNER_HASH_SALT`, deploy the main Worker, and deploy the cron companion Worker. No remote migration command is needed because the schema is current. Do not run production-changing commands until approval.
 
 ## Risks and regression checks
 

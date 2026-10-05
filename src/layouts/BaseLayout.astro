@@ -29,20 +29,13 @@ const activePath = Astro.url.pathname;
     <link rel="icon" type="image/jpeg" href="/baleno-national-high-school-logo.jpg" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
+    <meta name="robots" content="noindex, nofollow" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Balik Baleno" />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content="/baleno-national-high-school-logo.jpg" />
     <meta name="twitter:card" content="summary" />
-    <script is:inline>
-      if (window.location.hostname.endsWith(".workers.dev")) {
-        const robots = document.createElement("meta");
-        robots.name = "robots";
-        robots.content = "noindex, nofollow";
-        document.head.append(robots);
-      }
-    </script>
   </head>
   <body>
     <div class="app-shell">
