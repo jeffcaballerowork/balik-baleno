@@ -21,6 +21,22 @@ export interface WallResponse {
   resetsAt: string
 }
 
+export interface ArchiveDay {
+  date: string
+  count: number
+}
+
+export interface ArchiveDaysResponse {
+  month: string
+  days: ArchiveDay[]
+}
+
+export interface ArchiveDateResponse {
+  date: string
+  count: number
+  pins: WallNote[]
+}
+
 interface ApiErrorDetails {
   code: string
   message: string
@@ -190,6 +206,92 @@ function parseWallResponse(value: unknown): WallResponse {
     pins: value.pins,
 
     resetsAt: value.resetsAt,
+  }
+}
+
+function isArchiveDay(value: unknown, month: string): value is ArchiveDay {
+  return (
+    isRecord(value) &&
+    typeof value.date === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(value.date) &&
+    value.date.startsWith(`${month}-`) &&
+    typeof value.count === "number" &&
+    Number.isSafeInteger(value.count) &&
+    value.count > 0
+  )
+}
+
+export async function fetchArchiveDays(
+  month: string,
+  signal?: AbortSignal,
+): Promise<ArchiveDaysResponse> {
+  const url = new URL("/api/archive/days", window.location.origin)
+  url.searchParams.set("month", month)
+
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" },
+    signal,
+  })
+  const payload: unknown = await response.json()
+
+  if (!response.ok) {
+    const error = readApiError(
+      payload,
+      "Archive days could not be loaded right now.",
+    )
+    throw new WallApiError(error.message, response.status, error.code)
+  }
+
+  if (
+    !isRecord(payload) ||
+    payload.month !== month ||
+    !Array.isArray(payload.days) ||
+    !payload.days.every((day) => isArchiveDay(day, month))
+  ) {
+    throw new Error("The archive service returned invalid day counts.")
+  }
+
+  return { month, days: payload.days }
+}
+
+export async function fetchArchiveDate(
+  date: string,
+  signal?: AbortSignal,
+): Promise<ArchiveDateResponse> {
+  const response = await fetch(`/api/archive/${encodeURIComponent(date)}`, {
+    headers: {
+      Accept: "application/json",
+      "X-Device-Token": getDeviceToken(),
+    },
+    signal,
+  })
+  const payload: unknown = await response.json()
+
+  if (!response.ok) {
+    const error = readApiError(
+      payload,
+      "Archive notes could not be loaded right now.",
+    )
+    throw new WallApiError(error.message, response.status, error.code)
+  }
+
+  if (
+    !isRecord(payload) ||
+    payload.date !== date ||
+    typeof payload.count !== "number" ||
+    !Number.isSafeInteger(payload.count) ||
+    payload.count < 0 ||
+    !Array.isArray(payload.pins) ||
+    !payload.pins.every(isWallNote) ||
+    payload.count !== payload.pins.length
+  ) {
+    throw new Error("The archive service returned invalid notes.")
+  }
+
+  return {
+    date: payload.date,
+    count: payload.count,
+    pins: payload.pins,
   }
 }
 

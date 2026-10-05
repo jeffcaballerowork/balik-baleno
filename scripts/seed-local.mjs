@@ -18,7 +18,9 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 
 const today = getManilaDate()
 
-const wallDates = [today, shiftDate(today, -1), shiftDate(today, -2)]
+const wallDates = Array.from({ length: 5 }, (_, index) =>
+  shiftDate(today, -index),
+)
 
 const sqlPath = resolve(
   projectRoot,
@@ -48,6 +50,18 @@ const previewOrder = new Map(
   homePreviewNotes.map((note, index) => [note.id, index + 1]),
 )
 
+const seedDateList = wallDates.map(sqlValue).join(", ")
+
+statements.push(
+  `DELETE FROM reactions
+   WHERE pin_id IN (
+     SELECT id FROM pins
+     WHERE owner_hash = 'local-seed' AND wall_date IN (${seedDateList})
+   );`,
+  `DELETE FROM pins
+   WHERE owner_hash = 'local-seed' AND wall_date IN (${seedDateList});`,
+)
+
 function shiftDate(date, offset) {
   const value = new Date(`${date}T00:00:00.000Z`)
 
@@ -70,7 +84,17 @@ function sqlValue(value) {
 }
 
 for (const wallDate of wallDates) {
-  initialNotes.forEach((note, index) => {
+  const wallNotes =
+    wallDate === today
+      ? initialNotes
+      : initialNotes
+          .filter(
+            (_, index) =>
+              (index + Number(wallDate.slice(-2))) % 3 !== 0,
+          )
+          .slice(0, 13)
+
+  wallNotes.forEach((note, index) => {
     const pinId = `seed-${wallDate}-${note.id}`
 
     const createdAt = new Date(

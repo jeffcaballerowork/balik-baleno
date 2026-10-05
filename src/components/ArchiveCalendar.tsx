@@ -1,35 +1,112 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import Icon from "./Icon"
 
 import NoteCard from "./NoteCard"
 
-import { initialNotes } from "../data/mock"
-
 import { noteLightbox } from "../stores/note-lightbox"
+import {
+  fetchArchiveDate,
+  fetchArchiveDays,
+  type ArchiveDay,
+  type WallNote,
+} from "../lib/wall-client"
+
+function formatDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+}
 
 export default function ArchiveCalendar() {
-  const today = new Date()
+  const todayParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date())
+  const todayYear = Number(
+    todayParts.find((part) => part.type === "year")?.value,
+  )
+  const todayMonth = Number(
+    todayParts.find((part) => part.type === "month")?.value,
+  )
+  const todayDay = Number(todayParts.find((part) => part.type === "day")?.value)
+  const todayKey = `${todayYear}-${String(todayMonth).padStart(2, "0")}-${String(todayDay).padStart(2, "0")}`
 
   const [monthOffset, setMonthOffset] = useState(0)
 
-  const currentMonth = new Date(
-    today.getFullYear(),
+  const currentMonth = new Date(todayYear, todayMonth - 1 + monthOffset, 1)
 
-    today.getMonth() + monthOffset,
-
-    1,
+  const [selected, setSelected] = useState(() =>
+    new Date(todayYear, todayMonth - 1, todayDay - 1),
   )
 
-  const [selected, setSelected] = useState(
-    new Date(
-      today.getFullYear(),
+  const [archiveDays, setArchiveDays] = useState<ArchiveDay[]>([])
 
-      today.getMonth(),
+  const [archivePins, setArchivePins] = useState<WallNote[]>([])
 
-      Math.max(1, today.getDate() - 1),
-    ),
-  )
+  const [archiveCount, setArchiveCount] = useState(0)
+
+  const [calendarError, setCalendarError] = useState("")
+
+  const [archiveError, setArchiveError] = useState("")
+
+  const currentMonthKey = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}`
+
+  const selectedDateKey = formatDateKey(selected)
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    fetchArchiveDays(currentMonthKey, controller.signal)
+      .then((response) => {
+        setArchiveDays(response.days)
+        setCalendarError("")
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return
+
+        console.error(
+          "Unable to load archive calendar days.",
+          error instanceof Error ? error.message : String(error),
+        )
+        setCalendarError(
+          error instanceof Error
+            ? error.message
+            : "Archive days could not be loaded right now.",
+        )
+      })
+
+    return () => controller.abort()
+  }, [currentMonthKey])
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    setArchivePins([])
+    setArchiveCount(0)
+    setArchiveError("")
+
+    fetchArchiveDate(selectedDateKey, controller.signal)
+      .then((response) => {
+        setArchivePins(response.pins)
+        setArchiveCount(response.count)
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return
+
+        console.error(
+          "Unable to load archived notes.",
+          error instanceof Error ? error.message : String(error),
+        )
+        setArchiveError(
+          error instanceof Error
+            ? error.message
+            : "Archive notes could not be loaded right now.",
+        )
+      })
+
+    return () => controller.abort()
+  }, [selectedDateKey])
 
   const daysInMonth = new Date(
     currentMonth.getFullYear(),
@@ -47,11 +124,9 @@ export default function ArchiveCalendar() {
     1,
   ).getDay()
 
-  const archivedNotes = initialNotes
-
-    .filter((_, index) => (index + selected.getDate()) % 3 !== 0)
-
-    .slice(0, 13)
+  const storiesByDate = new Map(
+    archiveDays.map((day) => [day.date, day.count]),
+  )
 
   return (
     <div className="archive-layout">
@@ -102,27 +177,25 @@ export default function ArchiveCalendar() {
               index + 1,
             )
 
-            const future =
-              date >=
-              new Date(today.getFullYear(), today.getMonth(), today.getDate())
+            const dateKey = formatDateKey(date)
+            const future = dateKey >= todayKey
 
             return (
               <button
                 key={index}
                 disabled={future}
                 className={
-                  date.toDateString() === selected.toDateString()
-                    ? "selected-day"
-                    : ""
+                  dateKey === selectedDateKey ? "selected-day" : ""
                 }
                 onClick={() => setSelected(date)}
               >
                 {index + 1}
-                {!future && <span />}
+                {!future && (storiesByDate.get(dateKey) ?? 0) > 0 && <span />}
               </button>
             )
           })}
         </div>
+        {calendarError && <span role="alert">{calendarError}</span>}
         <div className="calendar-foot">
           <span className="calendar-dot" /> Days with stories to tell
         </div>
@@ -140,7 +213,8 @@ export default function ArchiveCalendar() {
                 year: "numeric",
               })}
             </h2>
-            <p>{archivedNotes.length} notes left on this wall</p>
+            <p>{archiveCount} notes left on this wall</p>
+            {archiveError && <span role="alert">{archiveError}</span>}
           </div>
           <button
             className="text-link"
@@ -150,7 +224,7 @@ export default function ArchiveCalendar() {
           </button>
         </div>
         <div className="archive-wall">
-          {archivedNotes.slice(0, 8).map((note) => (
+          {archivePins.slice(0, 8).map((note) => (
             <div
               key={note.id}
               style={{ transform: `rotate(${note.rotation}deg)` }}
@@ -158,7 +232,9 @@ export default function ArchiveCalendar() {
               <NoteCard
                 note={note}
                 compact
-                onClick={() => noteLightbox.set({ note, notes: initialNotes })}
+                onClick={() =>
+                  noteLightbox.set({ note, notes: archivePins })
+                }
               />
             </div>
           ))}
