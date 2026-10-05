@@ -131,7 +131,19 @@ The installed adapter enables Cloudflare Images and session KV by default. Neith
 - Added `wrangler.jsonc` for the Astro Cloudflare Worker entrypoint and Workers static assets. It uses compatibility date `2026-10-05`, the Astro deployment guide's `global_fetch_strictly_public` compatibility flag, a custom 404 asset, and `drop-trailing-slash` to honor Astro's `trailingSlash: "never"`.
 - `pnpm wrangler types` completed. `pnpm run check` passed with 0 errors, warnings, or hints; `pnpm run build` generated all 37 static pages; Wrangler dry-run read 94 assets; `pnpm wrangler deploy` succeeded.
 - Deployed at <https://balik-baleno.jeffcaballero-work.workers.dev> (Worker version `d4ae47d4-5aa0-41ac-bd2b-abd4d1d2df38`). Browser smoke tests returned 200 for all eight routes plus batch years 2016 and 1996, preserved slashless URLs and the footer disclaimer, confirmed `noindex, nofollow` on the workers.dev preview, and reported no page or console errors.
-- No D1 bindings, API routes, or cron triggers were added. Stop here pending approval for Phase 4.
+- No D1 bindings, API routes, or cron triggers were added in Phase 3. The user approved continuing into Phase 4.
+
+### Phase 4 — D1 and wall API (in progress)
+
+- User-approved limits: 150 pins per wall day and 2 pins per device per day. The 150-pin ceiling keeps to the supplied conservative limit for the fixed logical canvas; the per-device limit follows the user's choice.
+- Provisioned the new APAC production database `balik-baleno-db`, bound as `DB`. No mock data has been inserted locally or remotely.
+- Added the initial schema migration and `src/config.ts` with the two quotas and shared 1480×1130 logical canvas dimensions. The migration defines pins, reactions, reports, and walls.
+- `wrangler.jsonc` now enables Workers logs/traces and declares the production D1 binding. `OWNER_HASH_SALT` is not stored in config; configure a local `.dev.vars` secret and a Cloudflare secret before enabling writes.
+- Applied `0001_initial_schema.sql` to both local D1 and the remote APAC database. Verified all four application tables exist and both databases contain zero pins; no seed/mock rows were applied remotely.
+- Regenerated the compact `worker-configuration.d.ts` using `pnpm wrangler types --include-runtime false`; Astro check reports 0 errors/warnings/hints, build still produces 37 static pages, and Wrangler dry-run recognizes `env.DB`.
+- UI regression check after schema/config changes: Home at 390×844 differs from the Phase 0 baseline by 0.0048% pixels (≤0.1%); browser reported no console/page errors. No UI files or styles changed.
+- Current Astro on-demand docs support individual `export const prerender = false` endpoints while retaining the static site output; use the Cloudflare adapter runtime binding for D1.
+- Verified current Cloudflare D1 migration, query, and Wrangler command documentation. Use prepared statements with bound values and distinguish local (`--local`) versus remote operations.
 
 ## Risks and regression checks
 

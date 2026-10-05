@@ -4,6 +4,25 @@
   "main": "@astrojs/cloudflare/entrypoints/server",
   "compatibility_date": "2026-10-05",
   "compatibility_flags": ["global_fetch_strictly_public"],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.1,
+    },
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "balik-baleno-db",
+      "database_id": "d65dbf1e-4e1c-422f-b15b-18e15a25f105",
+      "migrations_dir": "migrations",
+    },
+  ],
   "assets": {
     "directory": "./dist/",
     "html_handling": "drop-trailing-slash",
