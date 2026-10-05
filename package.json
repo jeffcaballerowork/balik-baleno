@@ -8,6 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "dev:cron": "wrangler dev --config wrangler.cron.jsonc --test-scheduled --local --port 8788",
     "seed:local": "node --disable-warning=ExperimentalWarning scripts/seed-local.mjs",
     "format": "oxfmt"
   },

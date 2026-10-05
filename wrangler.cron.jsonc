@@ -1,0 +1,23 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "balik-baleno-archive",
+  "main": "./src/cron-worker.ts",
+  "compatibility_date": "2026-10-05",
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+    },
+  },
+  "triggers": {
+    "crons": ["0 16 * * *"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "balik-baleno-db",
+      "database_id": "d65dbf1e-4e1c-422f-b15b-18e15a25f105",
+    },
+  ],
+}

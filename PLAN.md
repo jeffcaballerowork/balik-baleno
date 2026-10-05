@@ -126,7 +126,7 @@ Checked the current official Astro Cloudflare integration and deployment guides 
 - Workers static assets: <https://developers.cloudflare.com/workers/static-assets/binding/>
 - Cron Triggers: <https://developers.cloudflare.com/workers/configuration/cron-triggers/>
 
-The current Astro docs confirm static prerendering is the default and adapters are needed for on-demand routes. The Cloudflare deployment guide identifies the adapter server entrypoint for Wrangler; Wrangler supports a Workers `assets` configuration for static delivery, and its current docs permit assets-only Workers without `main` (not appropriate when Astro API routes need the adapter). Cron is UTC and is dispatched to `scheduled()`, not an Astro route. These details agree with the requested Workers—not Pages—target, but the Astro/cron entrypoint seam must be verified again before Phase 5.
+The current Astro docs confirm static prerendering is the default and adapters are needed for on-demand routes. The Cloudflare deployment guide identifies the adapter server entrypoint for Wrangler; Wrangler supports a Workers `assets` configuration for static delivery, and its current docs permit assets-only Workers without `main` (not appropriate when Astro API routes need the adapter). Cron is UTC and is dispatched to `scheduled()`, not an Astro route. Phase 5 keeps Astro's documented server entrypoint intact and uses a small companion Worker for the scheduled handler on the same D1 binding.
 
 The installed adapter enables Cloudflare Images and session KV by default. Neither is needed for this static mock-data phase, so `imageService: "passthrough"` and top-level `session: false` are configured to avoid implicitly requesting `IMAGES` or `SESSION` resources. D1 is intentionally not configured until Phase 4.
 
@@ -137,7 +137,7 @@ The installed adapter enables Cloudflare Images and session KV by default. Neith
 - Deployed at <https://balik-baleno.jeffcaballero-work.workers.dev> (Worker version `d4ae47d4-5aa0-41ac-bd2b-abd4d1d2df38`). Browser smoke tests returned 200 for all eight routes plus batch years 2016 and 1996, preserved slashless URLs and the footer disclaimer, confirmed `noindex, nofollow` on the workers.dev preview, and reported no page or console errors.
 - No D1 bindings, API routes, or cron triggers were added in Phase 3. The user approved continuing into Phase 4.
 
-### Phase 4 — D1 and wall API (in progress)
+### Phase 4 — D1 and wall API (complete)
 
 - User-approved limits: 150 pins per wall day and 2 pins per device per day. The 150-pin ceiling keeps to the supplied conservative limit for the fixed logical canvas; the per-device limit follows the user's choice.
 - Provisioned the new APAC production database `balik-baleno-db`, bound as `DB`. The production database remains unseeded.
@@ -165,6 +165,18 @@ The installed adapter enables Cloudflare Images and session KV by default. Neith
 - Wired the shared lightbox Report action to the API for D1-backed notes; successful reports show the existing confirmation text, while failures are logged and shown inline. Local mock/archive notes retain their original client-only confirmation until the archive API is connected.
 - Verified invalid tokens return 400, missing pins return 404, and a valid report returns 201. Browser interaction confirmed “Reported · thank you”; the pre-action lightbox screenshot differs by 0.0000%, with no page or console errors. Temporary report rows were removed; local and remote report counts are both zero.
 - `pnpm run check` reports 0 errors, warnings, or hints; `pnpm run build` completes successfully with all 37 static pages and the Worker API entrypoints.
+
+### Phase 5 — daily archive cron (complete)
+
+- Current Cloudflare Cron Trigger docs specify UTC scheduling and a `scheduled()` module handler; the installed Wrangler 4.147.0 schema supports top-level `triggers.crons`, and its `wrangler dev --test-scheduled` endpoint allows local event tests with explicit cron/time values.
+- Current Astro Cloudflare adapter docs prescribe `@astrojs/cloudflare/entrypoints/server` as the fetch entrypoint and do not document a scheduled-handler extension. Added a small companion Worker instead of wrapping adapter internals; it uses the same existing D1 binding and does not change Astro request/static-asset routing.
+- Added `wrangler.cron.jsonc` for the `balik-baleno-archive` companion Worker, sharing the existing `balik-baleno-db` binding and configuring `0 16 * * *` (UTC midnight in Manila). Added `pnpm run dev:cron` to run the handler locally with remote bindings disabled.
+- The scheduled handler derives the previous Manila calendar date from `controller.scheduledTime - 1 ms`, then performs one parameterized D1 upsert of that date's active-pin count and the scheduled timestamp. The operation also creates a zero-count `walls` row for an empty day; retrying an event updates the same primary-key row.
+- Generated companion binding/runtime declarations using Wrangler 4.147.0. Local dry-run bundles the companion Worker and recognizes `env.DB`; no production deployment was performed.
+- Local scheduled-event verification at `2026-10-05T16:00:00Z` upserted `2026-10-05` with 20 pins. Replaying the same event left one row with the same count/timestamp. A simulated `2026-10-06T16:00:00Z` event created a zero-count row for `2026-10-06`. Temporary test rows were removed afterward; production D1 was not touched.
+- Manual local test: start `pnpm run dev:cron`, then request `http://127.0.0.1:8788/cdn-cgi/local/scheduled?cron=0+16+*+*+*&time=1791216000000&format=json`. The local Worker returns a successful scheduled-event outcome; query local D1's `walls` table to inspect the finalized day.
+- `pnpm run check` and `pnpm run build` pass; Home, Wall, and Archive screenshots remain within the established ≤0.1% baseline tolerance.
+- References: <https://developers.cloudflare.com/workers/configuration/cron-triggers/>, <https://developers.cloudflare.com/workers/runtime-apis/handlers/scheduled/>, <https://developers.cloudflare.com/workers/examples/cron-trigger/>, <https://developers.cloudflare.com/workers/wrangler/configuration/>, <https://docs.astro.build/en/guides/integrations-guide/cloudflare/>, <https://docs.astro.build/en/guides/deploy/cloudflare/>.
 - Extracted the shared D1 pin/reaction mapping into `src/lib/wall-pins.ts` so current-wall and archive reads preserve identical note fields, counts, device reaction state, and movement eligibility without duplicating conversion logic.
 - Added `GET /api/archive/days?month=YYYY-MM` using grouped active-pin counts and `GET /api/archive/:date` using the shared pin reader. Both validate inputs and return typed JSON; archived pins keep their reaction data, while movement eligibility remains false for past wall dates.
 - Wired `ArchiveCalendar` to load month counts and the selected date from the API. Manila-local dates determine the default selection and disabled future days; calendar dots appear only for dates with active pins, the displayed note count is real, and archive notes open in the shared lightbox. Errors are logged and shown without changing normal layout.
