@@ -1,16 +1,25 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import PhaseOnePlaceholder from "../../components/PhaseOnePlaceholder.astro";
+import BatchPage from "../../components/BatchPage.astro";
 
-export function getStaticPaths() {
-  return Array.from({ length: 30 }, (_, index) => ({
-    params: { year: String(2025 - index) },
-  }));
+interface Props {
+  year: number;
 }
 
-const { year } = Astro.params;
+export function getStaticPaths() {
+  return Array.from({ length: 30 }, (_, index) => {
+    const year = 2025 - index;
+
+    return {
+      params: { year: String(year) },
+      props: { year },
+    };
+  });
+}
+
+const { year } = Astro.props;
 ---
 
 <BaseLayout title={`Class of ${year}`}>
-  <PhaseOnePlaceholder />
+  <BatchPage year={year} />
 </BaseLayout>

@@ -1,0 +1,64 @@
+---
+import Icon from "./Icon.astro";
+import { graduationPhoto, memberNames } from "../data/mock";
+
+interface Props {
+  year: number;
+}
+
+const { year } = Astro.props;
+---
+
+<main class="batch-page content-width">
+  <button class="back-link" data-nav="/batches">
+    <Icon name="arrowLeft" size={17} /> All batches
+  </button>
+  <div class="batch-hero">
+    <div>
+      <span class="eyebrow">THE YEAR WE&apos;LL NEVER FORGET</span>
+      <h1>Class of <em>{year}.</em></h1>
+      <p>
+        Same old stories. A few new chapters. It&apos;s really good to see you again.
+      </p>
+      <div class="batch-hero-stat">
+        <span><strong>68</strong> classmates here</span>
+        <span><strong>124</strong> memories shared</span>
+      </div>
+    </div>
+    <div class="batch-hero-photo">
+      <img src={graduationPhoto} alt="Graduates celebrating together" />
+      <span>the good old days ↗</span>
+    </div>
+  </div>
+  <section class="batch-members">
+    <div class="section-heading">
+      <div>
+        <span class="eyebrow"><span class="eyebrow-line"></span>FAMILIAR FACES</span>
+        <h2>Look who&apos;s here</h2>
+        <p>The names you know, the people you missed.</p>
+      </div>
+    </div>
+    <div class="member-grid">
+      {
+        memberNames.map((name, index) => (
+          <div class="member-card">
+            <span class={`member-avatar member-avatar-${index % 4}`}>
+              {name.split(" ").map((part) => part[0]).join("")}
+            </span>
+            <div>
+              <strong>{name}</strong>
+              <small>Class of {year}</small>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+  <div class="batch-cta">
+    <span>Missing someone?</span>
+    <p>Leave a note on the wall and let them know you&apos;re thinking of them.</p>
+    <button class="button button-primary" data-nav="/create">
+      Pin a note <Icon name="arrow" size={18} />
+    </button>
+  </div>
+</main>
