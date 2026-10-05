@@ -89,12 +89,15 @@ Mock content currently lives in `src/App.tsx` and moves to `src/data/mock.ts` wi
 | Home | Pass | 0.0048% / 0.0010% / 0.0005% differing pixels (≤0.1%) | Normalized DOM matches; lightbox open/arrow/Escape and year-specific batch navigation smoke-tested |
 | Wall | Pass | 0.0099% / 0.0034% / 0.0016% differing pixels (≤0.1%) | Normalized DOM matches; zoomed-out state 0.0030%, note lightbox 0.0000%; pan, note drag, pointer-open, zoom, and Escape smoke-tested |
 | Create | Pass | 0.0015% / 0.0000% / 0.0000% differing pixels (≤0.1%); paper and Draw states 0.0000% | Normalized DOM matches for all eight page/editor states; 220-character limit, paper/font/sticker/anonymous/drawing controls, mock pin-to-wall flow, and lightbox smoke-tested |
+| Archive | Pass | 0.0018% / 0.0000% / 0.0004% differing pixels (≤0.1%); another-day state 0.0000% | Normalized DOM matches all four states; month navigation, selected-day preview, note lightbox, and return-to-wall navigation smoke-tested |
 
 Home's static content is in `src/components/HomePage.astro`; only its preview wall hydrates through `HeroWall` (`client:visible`). `NoteCard` is shared, and the layout-level `NoteLightbox` uses a nanostores atom (`client:idle`). The data module is marked `MOCK, replace before public launch` and contains the sample notes, news, events, member names, and Home preview counts/initials. The Astro dev toolbar is disabled so it cannot contaminate screenshot comparisons; it is not part of the production page.
 
 The Freedom Wall heading and frame are static Astro markup in `src/components/WallPage.astro`; `WallBoard` is a `client:only="react"` island with its original pan, pinch, zoom, and note-drag logic.
 
 `CreateEditor` is the `client:load` island. Until Phase 4 adds the API, created mock notes are kept in session storage and loaded onto the mock wall, preserving the original create-then-view interaction without making the sample note permanent.
+
+The Archive heading stays static in `src/components/ArchivePage.astro`; `ArchiveCalendar` is the `client:only="react"` island because its calendar and preview depend on the current date and selected day. Archive notes remain mock data and open in the layout-level lightbox.
 
 ## Current platform documentation checked
 
