@@ -1,0 +1,37 @@
+---
+import Icon from "./Icon.astro";
+import { newsItems } from "../data/mock";
+---
+
+<main class="listing-page content-width">
+  <div class="page-heading">
+    <span class="eyebrow"><span class="eyebrow-line"></span>{" "}THE WORD AROUND HERE</span>
+    <h1>News &amp; <em>stories.</em></h1>
+    <p>
+      Good things happening, familiar faces doing wonderful things, and all the little updates in between.
+    </p>
+  </div>
+  <div class="news-grid listing-grid">
+    {
+      newsItems.map((item, index) => (
+        <article class="news-card">
+          <div class="news-card-image">
+            <img src={item.image} alt="School and alumni memories" />
+            <span class="image-index">0{index + 1} / 03</span>
+          </div>
+          <div class="news-meta">
+            <span>{item.tag}</span><span>{item.date}</span>
+          </div>
+          <h3>{item.title}</h3>
+          <p>{item.description}</p>
+        </article>
+      ))
+    }
+  </div>
+  <div class="listing-bottom">
+    Got a story worth sharing?{" "}
+    <button class="text-link" data-nav="/create">
+      Leave it on the wall <Icon name="arrow" size={18} />
+    </button>
+  </div>
+</main>
