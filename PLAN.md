@@ -92,6 +92,7 @@ Mock content currently lives in `src/App.tsx` and moves to `src/data/mock.ts` wi
 | Archive | Pass | 0.0018% / 0.0000% / 0.0004% differing pixels (≤0.1%); another-day state 0.0000% | Normalized DOM matches all four states; month navigation, selected-day preview, note lightbox, and return-to-wall navigation smoke-tested |
 | News | Pass | 0.0039% / 0.0000% / 0.0000% differing pixels (≤0.1%) | Normalized DOM matches; all images loaded; “Leave it on the wall” CTA navigates to Create |
 | Events | Pass | 0.0020% / 0.0000% / 0.0000% differing pixels (≤0.1%); RSVP-toggled state 0.0000% | Normalized DOM matches all four states; RSVP toggle on/off smoke-tested |
+| Batches | Pass | 0.0061% / 0.0025% / 0.0043% differing pixels (≤0.1%) | Normalized DOM matches; links to both /batches/2016 and /batches/1996 verified |
 
 Home's static content is in `src/components/HomePage.astro`; only its preview wall hydrates through `HeroWall` (`client:visible`). `NoteCard` is shared, and the layout-level `NoteLightbox` uses a nanostores atom (`client:idle`). The data module is marked `MOCK, replace before public launch` and contains the sample notes, news, events, member names, and Home preview counts/initials. The Astro dev toolbar is disabled so it cannot contaminate screenshot comparisons; it is not part of the production page.
 
@@ -104,6 +105,8 @@ The Archive heading stays static in `src/components/ArchivePage.astro`; `Archive
 News is entirely static Astro markup in `src/components/NewsPage.astro`; its cards use the shared mock news dataset and the call to action routes to Create.
 
 The Events heading and disclaimer are static Astro markup; `EventRsvp` is the `client:visible` island for the preview-only RSVP toggles.
+
+The Batches directory is static Astro markup; each class card now navigates to its real `/batches/{year}` route.
 
 ## Current platform documentation checked
 

@@ -1,0 +1,31 @@
+---
+import Icon from "./Icon.astro";
+
+const years = Array.from({ length: 30 }, (_, index) => ({
+  year: 2025 - index,
+  classmates: 34 + (index * 13) % 51,
+}));
+---
+
+<main class="listing-page content-width">
+  <div class="page-heading">
+    <span class="eyebrow"><span class="eyebrow-line"></span>{" "}THE YEARS THAT MADE US</span>
+    <h1>Find your <em>batch.</em></h1>
+    <p>
+      Different years, same place in our hearts. Find your people and pick up where you left off.
+    </p>
+  </div>
+  <div class="batches-grid">
+    {
+      years.map(({ year, classmates }) => (
+        <button data-nav={`/batches/${year}`}>
+          <span>CLASS OF</span>
+          <strong>{year}</strong>
+          <span>
+            {classmates} classmates <Icon name="arrow" size={16} />
+          </span>
+        </button>
+      ))
+    }
+  </div>
+</main>
