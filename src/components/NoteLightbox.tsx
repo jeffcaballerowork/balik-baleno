@@ -14,7 +14,7 @@ import {
 } from "../data/mock"
 
 import { noteLightbox } from "../stores/note-lightbox"
-import { togglePinReaction } from "../lib/wall-client"
+import { reportPin, togglePinReaction } from "../lib/wall-client"
 
 export default function NoteLightbox() {
   const { note, notes } = useStore(noteLightbox)
@@ -38,6 +38,10 @@ export default function NoteLightbox() {
 
   const [reported, setReported] = useState(false)
 
+  const [reportPending, setReportPending] = useState(false)
+
+  const [reportError, setReportError] = useState("")
+
   const index = note ? notes.findIndex((item) => item.id === note.id) : -1
 
   function close() {
@@ -54,6 +58,44 @@ export default function NoteLightbox() {
     })
 
     setReported(false)
+    setReportPending(false)
+    setReportError("")
+  }
+
+  async function submitReport() {
+    if (!note || reported || reportPending) return
+
+    if (typeof note.id === "number") {
+      setReported(true)
+      return
+    }
+
+    const reportPinId = note.id
+    setReportError("")
+    setReportPending(true)
+
+    try {
+      await reportPin(reportPinId)
+      if (noteLightbox.get().note?.id === reportPinId) {
+        setReported(true)
+      }
+    } catch (error) {
+      console.error(
+        "Unable to submit the note report.",
+        error instanceof Error ? error.message : String(error),
+      )
+      if (noteLightbox.get().note?.id === reportPinId) {
+        setReportError(
+          error instanceof Error
+            ? error.message
+            : "The report could not be submitted.",
+        )
+      }
+    } finally {
+      if (noteLightbox.get().note?.id === reportPinId) {
+        setReportPending(false)
+      }
+    }
   }
 
   async function toggleReaction(kind: ReactionKind) {
@@ -114,6 +156,12 @@ export default function NoteLightbox() {
     setPendingReactions(new Set())
     setReactionError("")
   }, [note?.id, note?.reactionCounts, note?.myReactions])
+
+  useEffect(() => {
+    setReported(false)
+    setReportPending(false)
+    setReportError("")
+  }, [note?.id])
 
   useEffect(() => {
     if (!note) return
@@ -207,10 +255,14 @@ export default function NoteLightbox() {
             })}
           </div>
           {reactionError && <span role="alert">{reactionError}</span>}
-          <button className="report-button" onClick={() => setReported(true)}>
+          <button
+            className="report-button"
+            onClick={() => void submitReport()}
+          >
             <Icon name="flag" size={16} />{" "}
             {reported ? "Reported · thank you" : "Report"}
           </button>
+          {reportError && <span role="alert">{reportError}</span>}
         </div>
       </div>
     </div>

@@ -70,6 +70,12 @@ export interface ToggleReactionResponse {
   myReactions: NoteReactionState
 }
 
+export interface ReportPinResponse {
+  id: string
+  pinId: string
+  createdAt: string
+}
+
 const reactionKinds: ReactionKind[] = ["love", "relate", "nostalgia"]
 
 export class WallApiError extends Error {
@@ -333,6 +339,41 @@ export async function togglePinReaction(
     pinId: payload.pinId,
     reactionCounts: payload.reactionCounts,
     myReactions: payload.myReactions,
+  }
+}
+
+export async function reportPin(id: string): Promise<ReportPinResponse> {
+  const response = await fetch(`/api/pins/${encodeURIComponent(id)}/report`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ deviceToken: getDeviceToken() }),
+  })
+
+  const payload: unknown = await response.json()
+
+  if (!response.ok) {
+    const error = readApiError(payload, "The report could not be submitted.")
+
+    throw new WallApiError(error.message, response.status, error.code)
+  }
+
+  if (
+    !isRecord(payload) ||
+    typeof payload.id !== "string" ||
+    payload.pinId !== id ||
+    typeof payload.createdAt !== "string" ||
+    !Number.isFinite(Date.parse(payload.createdAt))
+  ) {
+    throw new Error("The wall service returned an invalid report response.")
+  }
+
+  return {
+    id: payload.id,
+    pinId: payload.pinId,
+    createdAt: payload.createdAt,
   }
 }
 
