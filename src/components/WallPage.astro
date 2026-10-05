@@ -1,0 +1,38 @@
+---
+import Icon from "./Icon.astro";
+import WallBoard from "./WallBoard";
+import { homeMock } from "../data/mock";
+---
+
+<div class="wall-page">
+  <div class="page-heading content-width wall-page-heading">
+    <div>
+      <span class="eyebrow"><span class="eyebrow-line"></span> A LITTLE BIT OF EVERYONE</span>
+      <h1>The Freedom <em>Wall.</em></h1>
+      <p>
+        Little thoughts, big feelings, and everything in between. Grab a note and make yourself at home.
+      </p>
+    </div>
+    <div class="wall-page-actions">
+      <div class="wall-timer">
+        <span class="live-dot"></span> TODAY&apos;S WALL <span class="timer-divider">/</span> RESETS IN {homeMock.resetsIn.toUpperCase()}
+      </div>
+      <button class="button button-primary" data-nav="/create">
+        <Icon name="pin" size={18} /> Pin a note <Icon name="arrow" size={17} />
+      </button>
+    </div>
+  </div>
+  <div class="wall-frame">
+    <div class="wall-frame-top">
+      <span>BALIK BALENO <span class="frame-star">✳</span> FREEDOM WALL</span>
+      <span>DRAG TO EXPLORE · TAP A NOTE TO READ</span>
+    </div>
+    <WallBoard client:only="react" />
+    <div class="wall-frame-bottom">
+      <span>EVERY NOTE HAS A STORY.</span>
+      <button data-nav="/archive">
+        Explore past walls <Icon name="arrow" size={17} />
+      </button>
+    </div>
+  </div>
+</div>
