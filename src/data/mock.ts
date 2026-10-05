@@ -3,7 +3,7 @@
 export type NoteKind = "sticky" | "torn" | "notebook" | "polaroid" | "card"
 
 export interface Note {
-  id: number
+  id: string | number
 
   kind: NoteKind
 
@@ -28,6 +28,8 @@ export interface Note {
   ink?: string
 
   font?: "hand" | "serif"
+
+  zIndex?: number
 }
 
 export const campusPhoto =

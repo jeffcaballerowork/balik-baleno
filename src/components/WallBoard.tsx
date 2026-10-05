@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import type { PointerEvent as ReactPointerEvent } from "react"
 
@@ -6,14 +6,14 @@ import Icon from "./Icon"
 
 import NoteCard from "./NoteCard"
 
-import { initialNotes } from "../data/mock"
+import type { Note } from "../data/mock"
 
 import { noteLightbox } from "../stores/note-lightbox"
 import { consumeIncomingMockPinId, loadMockPins } from "../stores/mock-pins"
+import { fetchWall } from "../lib/wall-client"
+import { wallData } from "../stores/wall-data"
 
 interface WallBoardProps {
-  notes?: typeof initialNotes
-
   incomingId?: number | null
 
   interactive?: boolean
@@ -24,14 +24,20 @@ interface Position {
   y: number
 }
 
-export default function WallBoard({
-  notes = initialNotes,
+function logWallLoadError(error: unknown) {
+  console.error(
+    "Unable to load the Freedom Wall.",
+    error instanceof Error ? error.message : String(error),
+  )
+}
 
+export default function WallBoard({
   incomingId = null,
 
   interactive = true,
 }: WallBoardProps) {
-  const [wallNotes] = useState(() => [...loadMockPins().reverse(), ...notes])
+  const [wallNotes, setWallNotes] = useState<Note[]>([])
+  const [wallError, setWallError] = useState("")
   const [newNoteId] = useState(consumeIncomingMockPinId)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
 
@@ -39,14 +45,14 @@ export default function WallBoard({
     typeof window !== "undefined" && window.innerWidth < 700 ? 0.55 : 0.82,
   )
 
-  const [positions, setPositions] = useState<Record<number, Position>>({})
+  const [positions, setPositions] = useState<Record<string, Position>>({})
 
   const pointerRef = useRef<Map<number, Position>>(new Map())
 
   const gestureRef = useRef<{
     id?: number
 
-    noteId?: number
+    noteId?: string
 
     startX: number
 
@@ -63,9 +69,31 @@ export default function WallBoard({
     startScale?: number
   } | null>(null)
 
+  useEffect(() => {
+    const controller = new AbortController()
+
+    fetchWall(undefined, controller.signal)
+      .then((wall) => {
+        setWallNotes([...loadMockPins().reverse(), ...wall.pins])
+        wallData.set({ resetsAt: wall.resetsAt })
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return
+
+        logWallLoadError(error)
+        setWallError(
+          error instanceof Error
+            ? error.message
+            : "The wall could not be loaded right now.",
+        )
+      })
+
+    return () => controller.abort()
+  }, [])
+
   function startPointer(
     event: ReactPointerEvent<HTMLDivElement>,
-    noteId?: number,
+    noteId?: string,
   ) {
     if (
       !interactive ||
@@ -104,7 +132,10 @@ export default function WallBoard({
     } else {
       const current = noteId
         ? positions[noteId] ||
-          wallNotes.find((note) => note.id === noteId) || { x: 0, y: 0 }
+          wallNotes.find((note) => String(note.id) === noteId) || {
+            x: 0,
+            y: 0,
+          }
         : offset
 
       gestureRef.current = {
@@ -188,7 +219,7 @@ export default function WallBoard({
     const gesture = gestureRef.current
 
     if (gesture?.id === event.pointerId && gesture.noteId && !gesture.moved) {
-      const note = wallNotes.find((item) => item.id === gesture.noteId)
+      const note = wallNotes.find((item) => String(item.id) === gesture.noteId)
 
       if (note) noteLightbox.set({ note, notes: wallNotes })
     }
@@ -207,7 +238,7 @@ export default function WallBoard({
         startPointer(
           event,
 
-          button ? Number(button.getAttribute("data-note-id")) : undefined,
+          button?.getAttribute("data-note-id") ?? undefined,
         )
       }}
       onPointerMove={movePointer}
@@ -225,11 +256,12 @@ export default function WallBoard({
         </div>
         <div className="wall-scrawl wall-scrawl-two">FOUNDED 1992</div>
         {wallNotes.map((note) => {
-          const position = positions[note.id] || note
+          const noteId = String(note.id)
+          const position = positions[noteId] || note
 
           return (
             <div
-              data-note-id={note.id}
+              data-note-id={noteId}
               className={`wall-note-position ${
                 incomingId === note.id || newNoteId === note.id ? "is-new" : ""
               }`}
@@ -246,7 +278,7 @@ export default function WallBoard({
                 note={note}
                 onClick={(event) => {
                   if (event.detail === 0) {
-                    noteLightbox.set({ note, notes })
+                    noteLightbox.set({ note, notes: wallNotes })
                   }
                 }}
               />
@@ -254,6 +286,11 @@ export default function WallBoard({
           )
         })}
       </div>
+      {wallError && (
+        <p className="wall-load-error" role="alert">
+          {wallError}
+        </p>
+      )}
       {interactive && (
         <div className="wall-controls">
           <span>

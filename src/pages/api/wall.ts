@@ -38,10 +38,9 @@ const pinRowSchema = z.object({
   author_name: z.string().nullable(),
 
   x_pct: z.number(),
-
   y_pct: z.number(),
-
   rotation: z.number(),
+  z_index: z.number(),
 
   color: z.enum(noteColors).nullable(),
 
@@ -58,7 +57,10 @@ const pinRowSchema = z.object({
 
 type PinRow = z.infer<typeof pinRowSchema>
 
-type WallNote = Omit<Note, "id"> & { id: string }
+interface WallNote extends Omit<Note, "id"> {
+  id: string
+  zIndex: number
+}
 
 function toNote(row: PinRow): WallNote {
   const drawing = row.drawing_json
@@ -68,6 +70,12 @@ function toNote(row: PinRow): WallNote {
   const image = row.image_key?.startsWith("https://images.unsplash.com/")
     ? row.image_key
     : undefined
+  const defaultInk =
+    row.kind === "card"
+      ? row.color === "mustard"
+        ? "#fff8e9"
+        : "#fff2d9"
+      : "#1b1a5f"
 
   return {
     id: row.id,
@@ -84,6 +92,8 @@ function toNote(row: PinRow): WallNote {
 
     rotation: row.rotation,
 
+    zIndex: row.z_index,
+
     color: row.color ?? undefined,
 
     image,
@@ -92,9 +102,9 @@ function toNote(row: PinRow): WallNote {
 
     drawing,
 
-    ink: row.ink,
+    ink: row.ink === defaultInk ? undefined : row.ink,
 
-    font: row.font,
+    font: row.font === "hand" ? undefined : row.font,
   }
 }
 
@@ -115,11 +125,11 @@ export const GET: APIRoute = async ({ url }) => {
 
   try {
     const result = await env.DB.prepare(
-      `SELECT id, kind, body, author_name, x_pct, y_pct, rotation,
+      `SELECT id, kind, body, author_name, x_pct, y_pct, rotation, z_index,
               color, font, ink, doodle, drawing_json, image_key
        FROM pins
        WHERE wall_date = ? AND status = 'active'
-       ORDER BY z_index ASC, created_at ASC`,
+       ORDER BY created_at ASC, z_index ASC`,
     )
 
       .bind(parsedDate.data)

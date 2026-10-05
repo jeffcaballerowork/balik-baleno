@@ -8,6 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "seed:local": "node --disable-warning=ExperimentalWarning scripts/seed-local.mjs",
     "format": "oxfmt"
   },
   "dependencies": {

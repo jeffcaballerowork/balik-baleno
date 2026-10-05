@@ -1,12 +1,51 @@
+import { useEffect, useState } from "react"
+
 import Icon from "./Icon"
 
 import NoteCard from "./NoteCard"
 
-import { homeMock, homePreviewNotes, initialNotes } from "../data/mock"
+import { homeMock, type Note } from "../data/mock"
 
 import { noteLightbox } from "../stores/note-lightbox"
+import {
+  fetchWall,
+  formatWallCountdown,
+  type WallNote,
+} from "../lib/wall-client"
+import { wallData } from "../stores/wall-data"
 
 export default function HeroWall() {
+  const [pins, setPins] = useState<WallNote[]>([])
+  const [resetsAt, setResetsAt] = useState<string | null>(null)
+  const [wallError, setWallError] = useState("")
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    fetchWall(undefined, controller.signal)
+      .then((wall) => {
+        setPins(wall.pins)
+        setResetsAt(wall.resetsAt)
+        wallData.set({ resetsAt: wall.resetsAt })
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return
+
+        console.error(
+          "Unable to load the Freedom Wall preview.",
+          error instanceof Error ? error.message : String(error),
+        )
+        setWallError("The Freedom Wall preview could not be loaded.")
+      })
+
+    return () => controller.abort()
+  }, [])
+
+  const notes: Note[] = [...pins].sort(
+    (first, second) => first.zIndex - second.zIndex,
+  )
+  const countdown = resetsAt ? formatWallCountdown(resetsAt) : "--"
+
   return (
     <div className="hero-visual">
       <div className="hero-visual-top">
@@ -17,7 +56,12 @@ export default function HeroWall() {
       </div>
       <div className="hero-wall">
         <span className="wall-chalk">our stories live here</span>
-        {homePreviewNotes.map((note, index) => (
+        {wallError && (
+          <span className="wall-preview-error" role="alert">
+            {wallError}
+          </span>
+        )}
+        {notes.slice(0, 8).map((note, index) => (
           <div
             className={`preview-note preview-note-${index}`}
             key={note.id}
@@ -26,7 +70,7 @@ export default function HeroWall() {
             <NoteCard
               note={note}
               compact
-              onClick={() => noteLightbox.set({ note, notes: initialNotes })}
+              onClick={() => noteLightbox.set({ note, notes: pins })}
             />
           </div>
         ))}
@@ -34,7 +78,7 @@ export default function HeroWall() {
       <div className="hero-visual-bottom">
         <span>
           <Icon name="clock" size={16} /> Wall resets in{" "}
-          <strong>{homeMock.resetsIn}</strong>
+          <strong>{countdown}</strong>
         </span>
         <button data-nav="/wall">
           See the full wall <Icon name="arrow" size={16} />

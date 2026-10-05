@@ -140,13 +140,16 @@ The installed adapter enables Cloudflare Images and session KV by default. Neith
 ### Phase 4 — D1 and wall API (in progress)
 
 - User-approved limits: 150 pins per wall day and 2 pins per device per day. The 150-pin ceiling keeps to the supplied conservative limit for the fixed logical canvas; the per-device limit follows the user's choice.
-- Provisioned the new APAC production database `balik-baleno-db`, bound as `DB`. No mock data has been inserted locally or remotely.
+- Provisioned the new APAC production database `balik-baleno-db`, bound as `DB`. The production database remains unseeded.
 - Added the initial schema migration and `src/config.ts` with the two quotas and shared 1480×1130 logical canvas dimensions. The migration defines pins, reactions, reports, and walls.
 - `wrangler.jsonc` now enables Workers logs/traces and declares the production D1 binding. `OWNER_HASH_SALT` is not stored in config; configure a local `.dev.vars` secret and a Cloudflare secret before enabling writes.
-- Applied `0001_initial_schema.sql` to both local D1 and the remote APAC database. Verified all four application tables exist and both databases contain zero pins; no seed/mock rows were applied remotely.
+- Applied `0001_initial_schema.sql` to both local D1 and the remote APAC database. Verified all four application tables exist; remote D1 contains zero pins.
 - Regenerated the compact `worker-configuration.d.ts` using `pnpm wrangler types --include-runtime false`; Astro check reports 0 errors/warnings/hints, build still produces 37 static pages, and Wrangler dry-run recognizes `env.DB`.
-- UI regression checks after schema/config and API changes: Home screenshots differ from Phase 0 by 0.0048% / 0.0009% / 0.0004% at 390×844 / 768×1024 / 1440×900 (≤0.1%); browser reported no console/page errors. No UI files or styles changed.
 - Added on-demand `GET /api/wall`: it validates optional calendar dates, reads active pins with a parameterized D1 query, and computes the next midnight PHT `resetsAt`. Local smoke tests returned an empty wall with `2026-10-05T16:00:00.000Z`, returned `2026-10-04T16:00:00.000Z` for that selected date, and rejected `2026-02-30` with JSON 400.
+- Added the hard-coded `--local` `pnpm run seed:local` script for development fixtures. It seeds 20 existing mock notes and their sample reactions on each of the latest three wall dates. Verified 60 local pins and 2,640 local reactions; remote D1 remains at zero pins.
+- Wired Home's wall preview and `/wall` notes to `GET /api/wall`, and replaced the wall countdown placeholder with the API's reset time. The local response returns 20 pins for `2026-10-04`, preserves their order, geometry, colors, and reset timestamp, and rejects an invalid date with JSON 400. Sample image URLs are exposed only from local seed rows.
+- Rechecked Home and Wall at all three baseline viewports. With the fixed browser clock and selected-day reset fixture, changed pixels (any RGB channel delta >8) were 0.0160% / 0.0086% / 0.0044% for Home and 0.0405% / 0.0892% / 0.0512% for Wall (all ≤0.1%). The API-driven countdown intentionally differs from the old mock countdown. No browser console or page errors remained after restarting the stale local dev server.
+- `pnpm run check` reports 0 errors, warnings, or hints; `pnpm run build` succeeds with all 37 static pages and the API Worker entrypoint.
 - Current Astro on-demand docs support individual `export const prerender = false` endpoints while retaining the static site output; use the Cloudflare adapter runtime binding for D1.
 - Verified current Cloudflare D1 migration, query, and Wrangler command documentation. Use prepared statements with bound values and distinguish local (`--local`) versus remote operations.
 
@@ -158,4 +161,4 @@ The installed adapter enables Cloudflare Images and session KV by default. Neith
 - **Fonts/images:** Google Fonts and Unsplash images are remote. Baseline waits for fonts and image decode; network changes or unavailable assets can produce capture noise. Do not replace fonts/assets in this migration.
 - **Sticky header:** announcement must scroll away while the cream header sticks; at mobile widths scroll direction toggles `header-hidden`. Test open-menu and scroll states, preserving exact classes.
 - **Static/Worker routing:** ensure prerendered paths and static assets resolve before the Worker fallback while `/api/*` is handled on demand; verify both locally and in deployed Worker previews.
-- **Consent/config gaps:** quota defaults are pending. Ask and resolve them at their phase gate rather than inventing requirements.
+- **Secrets:** `OWNER_HASH_SALT` is configured locally and declared required for deployment; the production secret must be set securely before deploying write endpoints.

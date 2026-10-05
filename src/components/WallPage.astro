@@ -1,7 +1,7 @@
 ---
 import Icon from "./Icon.astro";
 import WallBoard from "./WallBoard";
-import { homeMock } from "../data/mock";
+import WallCountdown from "./WallCountdown";
 ---
 
 <div class="wall-page">
@@ -15,7 +15,7 @@ import { homeMock } from "../data/mock";
     </div>
     <div class="wall-page-actions">
       <div class="wall-timer">
-        <span class="live-dot"></span> TODAY&apos;S WALL <span class="timer-divider">/</span> RESETS IN {homeMock.resetsIn.toUpperCase()}
+        <span class="live-dot"></span> TODAY&apos;S WALL <span class="timer-divider">/</span> <WallCountdown client:load />
       </div>
       <button class="button button-primary" data-nav="/create">
         <Icon name="pin" size={18} /> Pin a note <Icon name="arrow" size={17} />
