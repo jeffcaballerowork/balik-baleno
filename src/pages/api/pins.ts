@@ -14,6 +14,8 @@ import {
 
 import { getManilaDate } from "../../lib/wall-date"
 
+import { hashOwnerToken } from "../../lib/owner-hash"
+
 export const prerender = false
 
 const pinKinds = ["sticky", "torn", "notebook", "polaroid", "card"] as const
@@ -104,15 +106,7 @@ export const POST: APIRoute = async ({ request }) => {
   const drawingJson = pin.drawing.length ? JSON.stringify(pin.drawing) : null
 
   try {
-    const saltedToken = new TextEncoder().encode(
-      `${env.OWNER_HASH_SALT}:${pin.deviceToken}`,
-    )
-
-    const digest = await crypto.subtle.digest("SHA-256", saltedToken)
-
-    const ownerHash = Array.from(new Uint8Array(digest), (byte) =>
-      byte.toString(16).padStart(2, "0"),
-    ).join("")
+    const ownerHash = await hashOwnerToken(pin.deviceToken, env.OWNER_HASH_SALT)
 
     const insert = await env.DB.prepare(
       `INSERT INTO pins (

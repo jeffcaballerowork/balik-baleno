@@ -18,6 +18,8 @@ import {
   wallDateSchema,
 } from "../../lib/wall-date"
 
+import { hashOwnerToken } from "../../lib/owner-hash"
+
 import type { Note } from "../../data/mock"
 
 export const prerender = false
@@ -53,6 +55,10 @@ const pinRowSchema = z.object({
   drawing_json: z.string().nullable(),
 
   image_key: z.string().nullable(),
+
+  owner_hash: z.string(),
+
+  created_at: z.string(),
 })
 
 type PinRow = z.infer<typeof pinRowSchema>
@@ -60,9 +66,15 @@ type PinRow = z.infer<typeof pinRowSchema>
 interface WallNote extends Omit<Note, "id"> {
   id: string
   zIndex: number
+  canMove: boolean
 }
 
-function toNote(row: PinRow): WallNote {
+function toNote(
+  row: PinRow,
+  ownerHash: string | null,
+  now: number,
+  isCurrentWall: boolean,
+): WallNote {
   const drawing = row.drawing_json
     ? z.array(z.string()).parse(JSON.parse(row.drawing_json))
     : undefined
@@ -70,6 +82,7 @@ function toNote(row: PinRow): WallNote {
   const image = row.image_key?.startsWith("https://images.unsplash.com/")
     ? row.image_key
     : undefined
+  const createdAt = Date.parse(row.created_at)
   const defaultInk =
     row.kind === "card"
       ? row.color === "mustard"
@@ -94,6 +107,14 @@ function toNote(row: PinRow): WallNote {
 
     zIndex: row.z_index,
 
+    canMove:
+      isCurrentWall &&
+      ownerHash !== null &&
+      row.owner_hash === ownerHash &&
+      Number.isFinite(createdAt) &&
+      createdAt <= now &&
+      now - createdAt <= WALL_CONFIG.pinMoveWindowMs,
+
     color: row.color ?? undefined,
 
     image,
@@ -108,7 +129,7 @@ function toNote(row: PinRow): WallNote {
   }
 }
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   const requestedDate = url.searchParams.get("date") ?? getManilaDate()
 
   const parsedDate = wallDateSchema.safeParse(requestedDate)
@@ -123,10 +144,35 @@ export const GET: APIRoute = async ({ url }) => {
     )
   }
 
+  const deviceToken = request.headers.get("x-device-token")
+
+  if (deviceToken !== null && !/^[a-f0-9]{64}$/.test(deviceToken)) {
+    return errorResponse(
+      400,
+      "invalid_device_token",
+      "The device token is invalid.",
+    )
+  }
+
+  if (deviceToken !== null && !env.OWNER_HASH_SALT) {
+    return errorResponse(
+      500,
+      "server_misconfigured",
+      "The wall could not be loaded right now.",
+    )
+  }
+
   try {
+    const now = Date.now()
+    const isCurrentWall = parsedDate.data === getManilaDate()
+    const ownerHash =
+      deviceToken && env.OWNER_HASH_SALT
+        ? await hashOwnerToken(deviceToken, env.OWNER_HASH_SALT)
+        : null
     const result = await env.DB.prepare(
       `SELECT id, kind, body, author_name, x_pct, y_pct, rotation, z_index,
-              color, font, ink, doodle, drawing_json, image_key
+              color, font, ink, doodle, drawing_json, image_key, owner_hash,
+              created_at
        FROM pins
        WHERE wall_date = ? AND status = 'active'
        ORDER BY created_at ASC, z_index ASC`,
@@ -137,7 +183,7 @@ export const GET: APIRoute = async ({ url }) => {
       .all<PinRow>()
 
     const pins = result.results.map((row: unknown) =>
-      toNote(pinRowSchema.parse(row)),
+      toNote(pinRowSchema.parse(row), ownerHash, now, isCurrentWall),
     )
 
     return jsonResponse({

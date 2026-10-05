@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react"
 
 import type { PointerEvent as ReactPointerEvent } from "react"
 
+import { WALL_CONFIG } from "../config"
+
 import Icon from "./Icon"
 
 import NoteCard from "./NoteCard"
@@ -10,7 +12,12 @@ import type { Note } from "../data/mock"
 
 import { noteLightbox } from "../stores/note-lightbox"
 import { consumeIncomingMockPinId, loadMockPins } from "../stores/mock-pins"
-import { fetchWall } from "../lib/wall-client"
+import {
+  fetchWall,
+  getDeviceToken,
+  movePin,
+  WallApiError,
+} from "../lib/wall-client"
 import { wallData } from "../stores/wall-data"
 
 interface WallBoardProps {
@@ -47,6 +54,10 @@ export default function WallBoard({
 
   const [positions, setPositions] = useState<Record<string, Position>>({})
 
+  const [movablePinIds, setMovablePinIds] = useState<Set<string>>(
+    () => new Set(),
+  )
+
   const pointerRef = useRef<Map<number, Position>>(new Map())
 
   const gestureRef = useRef<{
@@ -64,6 +75,8 @@ export default function WallBoard({
 
     moved: boolean
 
+    position?: Position
+
     distance?: number
 
     startScale?: number
@@ -72,9 +85,14 @@ export default function WallBoard({
   useEffect(() => {
     const controller = new AbortController()
 
-    fetchWall(undefined, controller.signal)
+    fetchWall(undefined, controller.signal, getDeviceToken())
       .then((wall) => {
         setWallNotes([...loadMockPins().reverse(), ...wall.pins])
+        setMovablePinIds(
+          new Set(
+            wall.pins.filter((note) => note.canMove).map((note) => note.id),
+          ),
+        )
         wallData.set({ resetsAt: wall.resetsAt })
       })
       .catch((error: unknown) => {
@@ -198,14 +216,19 @@ export default function WallBoard({
       if (!gesture.moved) return
 
       if (gesture.noteId) {
+        const noteId = gesture.noteId
+        const position = {
+          x: gesture.originX + dx / scale,
+
+          y: gesture.originY + dy / scale,
+        }
+
+        gesture.position = position
+
         setPositions((previous) => ({
           ...previous,
 
-          [gesture.noteId!]: {
-            x: gesture.originX + dx / scale,
-
-            y: gesture.originY + dy / scale,
-          },
+          [noteId]: position,
         }))
       } else {
         setOffset({ x: gesture.originX + dx, y: gesture.originY + dy })
@@ -217,16 +240,66 @@ export default function WallBoard({
     if (!interactive) return
 
     const gesture = gestureRef.current
+    const noteId = gesture?.noteId
 
-    if (gesture?.id === event.pointerId && gesture.noteId && !gesture.moved) {
-      const note = wallNotes.find((item) => String(item.id) === gesture.noteId)
+    if (gesture?.id === event.pointerId && noteId) {
+      if (!gesture.moved) {
+        const note = wallNotes.find((item) => String(item.id) === noteId)
 
-      if (note) noteLightbox.set({ note, notes: wallNotes })
+        if (note) noteLightbox.set({ note, notes: wallNotes })
+      } else if (gesture.position && movablePinIds.has(noteId)) {
+        const position = {
+          x: Math.max(
+            0,
+            Math.min(WALL_CONFIG.logicalCanvasWidth, gesture.position.x),
+          ),
+          y: Math.max(
+            0,
+            Math.min(WALL_CONFIG.logicalCanvasHeight, gesture.position.y),
+          ),
+        }
+        const originalPosition = {
+          x: gesture.originX,
+          y: gesture.originY,
+        }
+
+        setPositions((previous) => ({
+          ...previous,
+          [noteId]: position,
+        }))
+
+        void savePinPosition(noteId, position, originalPosition)
+      }
     }
 
     pointerRef.current.delete(event.pointerId)
 
     gestureRef.current = null
+  }
+
+  async function savePinPosition(
+    noteId: string,
+    position: Position,
+    originalPosition: Position,
+  ) {
+    try {
+      await movePin(noteId, position)
+      setWallError("")
+    } catch (error) {
+      console.error(
+        "Unable to save the Freedom Wall note position.",
+        error instanceof Error ? error.message : String(error),
+      )
+      setPositions((previous) => ({
+        ...previous,
+        [noteId]: originalPosition,
+      }))
+      setWallError(
+        error instanceof WallApiError
+          ? error.message
+          : "The note position could not be saved.",
+      )
+    }
   }
 
   return (

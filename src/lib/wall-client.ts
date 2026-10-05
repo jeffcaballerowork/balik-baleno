@@ -3,6 +3,7 @@ import type { Note, NoteKind } from "../data/mock"
 export interface WallNote extends Omit<Note, "id"> {
   id: string
   zIndex: number
+  canMove: boolean
 }
 
 export interface WallResponse {
@@ -44,6 +45,16 @@ export interface CreatePinResponse {
   wallDate: string
 }
 
+export interface PinPosition {
+  x: number
+  y: number
+}
+
+export interface MovePinResponse extends PinPosition {
+  id: string
+  movedAt: string
+}
+
 export class WallApiError extends Error {
   constructor(
     message: string,
@@ -72,7 +83,7 @@ function readApiError(value: unknown, fallback: string): ApiErrorDetails {
   return { code: "unknown_error", message: fallback }
 }
 
-function getDeviceToken(): string {
+export function getDeviceToken(): string {
   const existing = window.localStorage.getItem(deviceTokenKey)
 
   if (existing && /^[a-f0-9]{64}$/.test(existing)) return existing
@@ -94,6 +105,7 @@ function isWallNote(value: unknown): value is WallNote {
     typeof value.id === "string" &&
     typeof value.zIndex === "number" &&
     Number.isFinite(value.zIndex) &&
+    typeof value.canMove === "boolean" &&
     typeof value.kind === "string" &&
     noteKinds.includes(value.kind as NoteKind) &&
     typeof value.text === "string" &&
@@ -141,13 +153,19 @@ export async function fetchWall(
   date?: string,
 
   signal?: AbortSignal,
+
+  deviceToken?: string,
 ): Promise<WallResponse> {
   const url = new URL("/api/wall", window.location.origin)
 
   if (date) url.searchParams.set("date", date)
 
+  const headers = new Headers({ Accept: "application/json" })
+
+  if (deviceToken) headers.set("X-Device-Token", deviceToken)
+
   const response = await fetch(url, {
-    headers: { Accept: "application/json" },
+    headers,
 
     signal,
   })
@@ -196,6 +214,48 @@ export async function createPin(
   }
 
   return { id: payload.id, wallDate: payload.wallDate }
+}
+
+export async function movePin(
+  id: string,
+  position: PinPosition,
+): Promise<MovePinResponse> {
+  const response = await fetch(`/api/pins/${encodeURIComponent(id)}/position`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ ...position, deviceToken: getDeviceToken() }),
+  })
+
+  const payload: unknown = await response.json()
+
+  if (!response.ok) {
+    const error = readApiError(payload, "The note position could not be saved.")
+
+    throw new WallApiError(error.message, response.status, error.code)
+  }
+
+  if (
+    !isRecord(payload) ||
+    payload.id !== id ||
+    typeof payload.x !== "number" ||
+    !Number.isFinite(payload.x) ||
+    typeof payload.y !== "number" ||
+    !Number.isFinite(payload.y) ||
+    typeof payload.movedAt !== "string" ||
+    !Number.isFinite(Date.parse(payload.movedAt))
+  ) {
+    throw new Error("The wall service returned an invalid position response.")
+  }
+
+  return {
+    id: payload.id,
+    x: payload.x,
+    y: payload.y,
+    movedAt: payload.movedAt,
+  }
 }
 
 export function formatWallCountdown(resetsAt: string): string {
