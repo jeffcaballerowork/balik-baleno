@@ -30,6 +30,21 @@ const noteColors = ["yellow", "pink", "blue", "green", "mustard"] as const
 
 const noteFonts = ["hand", "serif"] as const
 
+const reactionKinds = ["love", "relate", "nostalgia"] as const
+
+type ReactionKind = (typeof reactionKinds)[number]
+
+type ReactionCounts = Record<ReactionKind, number>
+
+type ReactionState = Record<ReactionKind, boolean>
+
+const reactionRowSchema = z.object({
+  pin_id: z.string(),
+  kind: z.enum(reactionKinds),
+  count: z.number().int().nonnegative(),
+  reacted: z.number().int().nonnegative(),
+})
+
 const pinRowSchema = z.object({
   id: z.string(),
 
@@ -67,6 +82,15 @@ interface WallNote extends Omit<Note, "id"> {
   id: string
   zIndex: number
   canMove: boolean
+  reactionCounts: ReactionCounts
+  myReactions: ReactionState
+}
+
+interface ReactionRow {
+  pin_id: string
+  kind: ReactionKind
+  count: number
+  reacted: number
 }
 
 function toNote(
@@ -74,6 +98,8 @@ function toNote(
   ownerHash: string | null,
   now: number,
   isCurrentWall: boolean,
+  reactionCounts: ReactionCounts,
+  myReactions: ReactionState,
 ): WallNote {
   const drawing = row.drawing_json
     ? z.array(z.string()).parse(JSON.parse(row.drawing_json))
@@ -114,6 +140,10 @@ function toNote(
       Number.isFinite(createdAt) &&
       createdAt <= now &&
       now - createdAt <= WALL_CONFIG.pinMoveWindowMs,
+
+    reactionCounts,
+
+    myReactions,
 
     color: row.color ?? undefined,
 
@@ -182,9 +212,56 @@ export const GET: APIRoute = async ({ url, request }) => {
 
       .all<PinRow>()
 
-    const pins = result.results.map((row: unknown) =>
-      toNote(pinRowSchema.parse(row), ownerHash, now, isCurrentWall),
+    const rows: PinRow[] = result.results.map((row: unknown) =>
+      pinRowSchema.parse(row),
     )
+
+    const reactionResult = await env.DB.prepare(
+      `SELECT pin_id, kind, COUNT(*) AS count,
+              SUM(CASE WHEN voter_hash = ? THEN 1 ELSE 0 END) AS reacted
+       FROM reactions
+       WHERE pin_id IN (
+         SELECT id FROM pins WHERE wall_date = ? AND status = 'active'
+       )
+       GROUP BY pin_id, kind`,
+    )
+      .bind(ownerHash, parsedDate.data)
+      .all<ReactionRow>()
+
+    const groupedReactions = new Map<string, ReactionRow[]>()
+
+    const reactionRows: ReactionRow[] = reactionResult.results.map(
+      (row: unknown) => reactionRowSchema.parse(row),
+    )
+
+    for (const reaction of reactionRows) {
+      const existing = groupedReactions.get(reaction.pin_id) ?? []
+      existing.push(reaction)
+      groupedReactions.set(reaction.pin_id, existing)
+    }
+
+    const pins = rows.map((row) => {
+      const counts: ReactionCounts = { love: 0, relate: 0, nostalgia: 0 }
+      const state: ReactionState = {
+        love: false,
+        relate: false,
+        nostalgia: false,
+      }
+
+      for (const reaction of groupedReactions.get(row.id) ?? []) {
+        counts[reaction.kind] = reaction.count
+        state[reaction.kind] = reaction.reacted > 0
+      }
+
+      return toNote(
+        row,
+        ownerHash,
+        now,
+        isCurrentWall,
+        counts,
+        state,
+      )
+    })
 
     return jsonResponse({
       pins,

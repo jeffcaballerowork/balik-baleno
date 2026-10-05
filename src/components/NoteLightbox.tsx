@@ -6,12 +6,35 @@ import Icon from "./Icon"
 
 import NoteCard from "./NoteCard"
 
+import {
+  mockReactionCounts,
+  type NoteReactionCounts,
+  type NoteReactionState,
+  type ReactionKind,
+} from "../data/mock"
+
 import { noteLightbox } from "../stores/note-lightbox"
+import { togglePinReaction } from "../lib/wall-client"
 
 export default function NoteLightbox() {
   const { note, notes } = useStore(noteLightbox)
 
-  const [reacted, setReacted] = useState<Record<string, boolean>>({})
+  const [mockReacted, setMockReacted] = useState<Record<string, boolean>>({})
+
+  const [reactionCounts, setReactionCounts] =
+    useState<NoteReactionCounts>(mockReactionCounts)
+
+  const [myReactions, setMyReactions] = useState<NoteReactionState>({
+    love: false,
+    relate: false,
+    nostalgia: false,
+  })
+
+  const [pendingReactions, setPendingReactions] = useState<
+    Set<ReactionKind>
+  >(new Set())
+
+  const [reactionError, setReactionError] = useState("")
 
   const [reported, setReported] = useState(false)
 
@@ -32,6 +55,65 @@ export default function NoteLightbox() {
 
     setReported(false)
   }
+
+  async function toggleReaction(kind: ReactionKind) {
+    if (!note || pendingReactions.has(kind)) return
+
+    if (typeof note.id === "number") {
+      const key = `${note.id}-${kind}`
+      setMockReacted((previous) => ({
+        ...previous,
+        [key]: !previous[key],
+      }))
+      return
+    }
+
+    setReactionError("")
+    setPendingReactions((previous) => new Set(previous).add(kind))
+
+    try {
+      const result = await togglePinReaction(note.id, kind)
+      const updatedNote = {
+        ...note,
+        reactionCounts: result.reactionCounts,
+        myReactions: result.myReactions,
+      }
+
+      setReactionCounts(result.reactionCounts)
+      setMyReactions(result.myReactions)
+      noteLightbox.set({
+        note: updatedNote,
+        notes: notes.map((item) =>
+          item.id === updatedNote.id ? updatedNote : item,
+        ),
+      })
+    } catch (error) {
+      console.error(
+        "Unable to save the note reaction.",
+        error instanceof Error ? error.message : String(error),
+      )
+      setReactionError(
+        error instanceof Error
+          ? error.message
+          : "Your reaction could not be saved.",
+      )
+    } finally {
+      setPendingReactions((previous) => {
+        const next = new Set(previous)
+        next.delete(kind)
+        return next
+      })
+    }
+  }
+
+  useEffect(() => {
+    setReactionCounts(note?.reactionCounts ?? mockReactionCounts)
+    setMyReactions(
+      note?.myReactions ?? { love: false, relate: false, nostalgia: false },
+    )
+    setPendingReactions(new Set())
+    setReactionError("")
+  }, [note?.id, note?.reactionCounts, note?.myReactions])
 
   useEffect(() => {
     if (!note) return
@@ -97,32 +179,34 @@ export default function NoteLightbox() {
         <div className="lightbox-bottom">
           <div className="reaction-buttons">
             {([
-              { name: "heart", label: "Love", count: 24 },
+              { kind: "love", name: "heart", label: "Love" },
 
-              { name: "smile", label: "Relate", count: 12 },
+              { kind: "relate", name: "smile", label: "Relate" },
 
-              { name: "spark", label: "Nostalgia", count: 8 },
+              { kind: "nostalgia", name: "spark", label: "Nostalgia" },
             ] as const).map((reaction) => {
-              const key = `${note.id}-${reaction.label}`
+              const key = `${note.id}-${reaction.kind}`
+              const isMockNote = typeof note.id === "number"
+              const isReacted = isMockNote
+                ? mockReacted[key] ?? false
+                : myReactions[reaction.kind]
+              const count = isMockNote
+                ? mockReactionCounts[reaction.kind] + (isReacted ? 1 : 0)
+                : reactionCounts[reaction.kind]
 
               return (
                 <button
                   key={key}
-                  className={reacted[key] ? "reacted" : ""}
-                  onClick={() =>
-                    setReacted((previous) => ({
-                      ...previous,
-
-                      [key]: !previous[key],
-                    }))
-                  }
+                  className={isReacted ? "reacted" : ""}
+                  onClick={() => void toggleReaction(reaction.kind)}
                 >
                   <Icon name={reaction.name} size={17} /> {reaction.label}{" "}
-                  <span>{reaction.count + (reacted[key] ? 1 : 0)}</span>
+                  <span>{count}</span>
                 </button>
               )
             })}
           </div>
+          {reactionError && <span role="alert">{reactionError}</span>}
           <button className="report-button" onClick={() => setReported(true)}>
             <Icon name="flag" size={16} />{" "}
             {reported ? "Reported · thank you" : "Report"}

@@ -1,9 +1,18 @@
-import type { Note, NoteKind } from "../data/mock"
+import type {
+  Note,
+  NoteKind,
+  NoteReactionCounts,
+  NoteReactionState,
+  ReactionKind,
+} from "../data/mock"
 
-export interface WallNote extends Omit<Note, "id"> {
+export interface WallNote
+  extends Omit<Note, "id" | "reactionCounts" | "myReactions"> {
   id: string
   zIndex: number
   canMove: boolean
+  reactionCounts: NoteReactionCounts
+  myReactions: NoteReactionState
 }
 
 export interface WallResponse {
@@ -55,6 +64,14 @@ export interface MovePinResponse extends PinPosition {
   movedAt: string
 }
 
+export interface ToggleReactionResponse {
+  pinId: string
+  reactionCounts: NoteReactionCounts
+  myReactions: NoteReactionState
+}
+
+const reactionKinds: ReactionKind[] = ["love", "relate", "nostalgia"]
+
 export class WallApiError extends Error {
   constructor(
     message: string,
@@ -68,6 +85,25 @@ export class WallApiError extends Error {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null
+}
+
+function isReactionCounts(value: unknown): value is NoteReactionCounts {
+  return (
+    isRecord(value) &&
+    reactionKinds.every(
+      (kind) =>
+        typeof value[kind] === "number" &&
+        Number.isSafeInteger(value[kind]) &&
+        value[kind] >= 0,
+    )
+  )
+}
+
+function isReactionState(value: unknown): value is NoteReactionState {
+  return (
+    isRecord(value) &&
+    reactionKinds.every((kind) => typeof value[kind] === "boolean")
+  )
 }
 
 function readApiError(value: unknown, fallback: string): ApiErrorDetails {
@@ -106,6 +142,8 @@ function isWallNote(value: unknown): value is WallNote {
     typeof value.zIndex === "number" &&
     Number.isFinite(value.zIndex) &&
     typeof value.canMove === "boolean" &&
+    isReactionCounts(value.reactionCounts) &&
+    isReactionState(value.myReactions) &&
     typeof value.kind === "string" &&
     noteKinds.includes(value.kind as NoteKind) &&
     typeof value.text === "string" &&
@@ -255,6 +293,46 @@ export async function movePin(
     x: payload.x,
     y: payload.y,
     movedAt: payload.movedAt,
+  }
+}
+
+export async function togglePinReaction(
+  id: string,
+  kind: ReactionKind,
+): Promise<ToggleReactionResponse> {
+  const response = await fetch(
+    `/api/pins/${encodeURIComponent(id)}/reactions`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ deviceToken: getDeviceToken(), kind }),
+    },
+  )
+
+  const payload: unknown = await response.json()
+
+  if (!response.ok) {
+    const error = readApiError(payload, "Your reaction could not be saved.")
+
+    throw new WallApiError(error.message, response.status, error.code)
+  }
+
+  if (
+    !isRecord(payload) ||
+    payload.pinId !== id ||
+    !isReactionCounts(payload.reactionCounts) ||
+    !isReactionState(payload.myReactions)
+  ) {
+    throw new Error("The wall service returned an invalid reaction response.")
+  }
+
+  return {
+    pinId: payload.pinId,
+    reactionCounts: payload.reactionCounts,
+    myReactions: payload.myReactions,
   }
 }
 

@@ -2,6 +2,18 @@
 
 export type NoteKind = "sticky" | "torn" | "notebook" | "polaroid" | "card"
 
+export type ReactionKind = "love" | "relate" | "nostalgia"
+
+export type NoteReactionCounts = Record<ReactionKind, number>
+
+export type NoteReactionState = Record<ReactionKind, boolean>
+
+export const mockReactionCounts: NoteReactionCounts = {
+  love: 24,
+  relate: 12,
+  nostalgia: 8,
+}
+
 export interface Note {
   id: string | number
 
@@ -30,6 +42,10 @@ export interface Note {
   font?: "hand" | "serif"
 
   zIndex?: number
+
+  reactionCounts?: NoteReactionCounts
+
+  myReactions?: NoteReactionState
 }
 
 export const campusPhoto =

@@ -10,6 +10,7 @@ import { noteLightbox } from "../stores/note-lightbox"
 import {
   fetchWall,
   formatWallCountdown,
+  getDeviceToken,
   type WallNote,
 } from "../lib/wall-client"
 import { wallData } from "../stores/wall-data"
@@ -22,7 +23,7 @@ export default function HeroWall() {
   useEffect(() => {
     const controller = new AbortController()
 
-    fetchWall(undefined, controller.signal)
+    fetchWall(undefined, controller.signal, getDeviceToken())
       .then((wall) => {
         setPins(wall.pins)
         setResetsAt(wall.resetsAt)
