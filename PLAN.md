@@ -152,7 +152,7 @@ The installed adapter enables Cloudflare Images and session KV by default. Neith
 - Initial deployment recorded at <https://balik-baleno.jeffcaballero-work.workers.dev> (Worker version `d4ae47d4-5aa0-41ac-bd2b-abd4d1d2df38`). Browser smoke tests returned 200 for all eight routes plus batch years 2016 and 1996, preserved slashless URLs and the footer disclaimer, confirmed `noindex, nofollow` on the workers.dev preview, and reported no page or console errors. This is not evidence that the current Phase 4 API code is deployed.
 - No D1 bindings, API routes, or cron triggers were added in Phase 3. The user approved continuing into Phase 4.
 
-### Phase 4 — D1 and wall API (implemented; locally verified, production deployment unverified)
+### Phase 4: D1 and wall API (implemented; verified in production on 2026-10-08)
 
 - Resolved limits: 150 pins per wall day and 5 pins per device per day. The 150-pin ceiling keeps to the supplied conservative limit for the fixed logical canvas; `src/config.ts` is configured with both approved limits.
 - Provisioned the new APAC production database `balik-baleno-db`, bound as `DB`. The production database remains unseeded.
@@ -189,7 +189,7 @@ The installed adapter enables Cloudflare Images and session KV by default. Neith
 - Current Astro on-demand docs support individual `export const prerender = false` endpoints while retaining static site output; API handlers use the Cloudflare adapter runtime binding for D1.
 - Current Cloudflare D1 migration, query, and Wrangler command documentation was checked. Prepared statements with bound values are used; local (`--local`) and remote operations are kept distinct.
 
-### Phase 5 — daily archive cron (implemented; locally verified, production deployment unverified)
+### Phase 5: daily archive cron (implemented; deployed to production 2026-10-08; first scheduled run not yet confirmed)
 
 - Current Cloudflare Cron Trigger docs specify UTC scheduling and a `scheduled()` module handler; the installed Wrangler 4.147.0 schema supports top-level `triggers.crons`, and its `wrangler dev --test-scheduled` endpoint allows local event tests with explicit cron/time values.
 - Current Astro Cloudflare adapter docs prescribe `@astrojs/cloudflare/entrypoints/server` as the fetch entrypoint and do not document a scheduled-handler extension. Added a small companion Worker instead of wrapping adapter internals; it uses the same existing D1 binding and does not change Astro request/static-asset routing.
