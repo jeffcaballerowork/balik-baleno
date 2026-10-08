@@ -4,5 +4,3 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - miniflare@5.20261006.0-alpha
   - wrangler@4.148.0
-overrides:
-  vite: 8.3.1

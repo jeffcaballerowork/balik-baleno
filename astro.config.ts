@@ -2,12 +2,9 @@ import cloudflare from "@astrojs/cloudflare"
 
 import react from "@astrojs/react"
 
-import { createRequire } from "node:module"
+import tailwindcss from "@tailwindcss/vite"
 
 import { defineConfig } from "astro/config"
-
-const require = createRequire(import.meta.url)
-const tailwindcss: typeof import("@tailwindcss/vite").default = require("@tailwindcss/vite").default
 
 export default defineConfig({
   output: "static",

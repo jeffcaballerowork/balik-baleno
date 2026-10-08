@@ -2,10 +2,10 @@
 
 ## STATUS
 
-- Phase: Phases 0 to 5 done (Phase 5 deployed, first scheduled run unconfirmed). Phase 6 is locally implemented but verification is blocked; Phases 7 to 12 are planned and not started.
-- State: INPUT NEEDED
+- Phase: Phases 0 to 5 done (Phase 5 deployed, first scheduled run unconfirmed). Phase 6 implementation is complete; verification requires real Google OAuth credentials (not fake ones). Phases 7 to 12 are planned and not started.
+- State: BLOCKED
 - Last update: 2026-10-08
-- Next action needs: configure local Google OAuth credentials and resolve the recorded Astro/Vite local verification failure. Separately, confirm the first archive run (see the Production checklist).
+- Next action: configure real local Google OAuth credentials to complete Phase 6 verification. Separately, confirm the first archive run (see the Production checklist).
 
 ## Gate protocol
 
