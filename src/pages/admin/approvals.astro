@@ -1,0 +1,75 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro"
+---
+
+<BaseLayout title="Account approvals">
+  <main class="auth-page content-width">
+    <p class="eyebrow"><span class="eyebrow-line"></span> ADMIN</p>
+    <h1>Approval <em>queue.</em></h1>
+    <p id="queue-status">Loading pending accounts…</p>
+    <div id="approval-list" class="approval-list"></div>
+  </main>
+</BaseLayout>
+
+<script>
+  interface PendingUser { id: string; email: string; display_name: string; batch_year: number | null; join_note: string | null }
+  const status = document.querySelector<HTMLElement>("#queue-status")
+  const list = document.querySelector<HTMLElement>("#approval-list")
+
+  async function csrfToken(): Promise<string> {
+    const response = await fetch("/api/auth/csrf", { credentials: "same-origin" })
+    const body = await response.json() as { token?: string }
+    if (!response.ok || !body.token) throw new Error("Could not prepare the review.")
+    return body.token
+  }
+
+  async function load(): Promise<void> {
+    const response = await fetch("/api/admin/approvals", { credentials: "same-origin" })
+    const body = await response.json() as { users?: PendingUser[]; error?: { message: string } }
+
+    if (!response.ok || !body.users) {
+      if (status) status.textContent = body.error?.message ?? "The queue is unavailable."
+      return
+    }
+
+    if (status) status.textContent = body.users.length ? "Review each request carefully." : "There are no pending accounts."
+    if (!list) return
+    list.replaceChildren(...body.users.map(user => {
+      const article = document.createElement("article")
+      article.className = "approval-card"
+      const name = document.createElement("strong")
+      name.textContent = user.display_name
+      const email = document.createElement("span")
+      email.textContent = user.email
+      const details = document.createElement("p")
+      details.textContent = `Batch ${user.batch_year ?? "not provided"} · ${user.join_note ?? "No note"}`
+      article.append(name, email, details)
+      for (const action of ["approve", "decline"] as const) {
+        const button = document.createElement("button")
+        button.className = action === "approve" ? "button button-primary" : "button button-outline"
+        button.textContent = action === "approve" ? "Approve" : "Decline"
+        button.addEventListener("click", () => { void review(user.id, action) })
+        article.append(button)
+      }
+      return article
+    }))
+  }
+
+  async function review(id: string, action: "approve" | "decline"): Promise<void> {
+    try {
+      const token = await csrfToken()
+      const response = await fetch(`/api/admin/approvals/${encodeURIComponent(id)}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+        body: JSON.stringify({ action }),
+      })
+      if (!response.ok) throw new Error("The review could not be saved.")
+      await load()
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "The review could not be saved."
+    }
+  }
+
+  void load()
+</script>

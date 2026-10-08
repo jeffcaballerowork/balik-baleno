@@ -2,10 +2,10 @@
 
 ## STATUS
 
-- Phase: Phases 0 to 5 done (Phase 5 deployed, first scheduled run unconfirmed). Phases 6 to 12 (Tier 1 features) are planned and not started.
-- State: WAITING FOR APPROVAL
+- Phase: Phases 0 to 5 done (Phase 5 deployed, first scheduled run unconfirmed). Phase 6 is locally implemented but verification is blocked; Phases 7 to 12 are planned and not started.
+- State: INPUT NEEDED
 - Last update: 2026-10-08
-- Next action needs: your answers to the Open questions at the bottom of this file, and your reply "approved" to start Phase 6. Separately, confirm the first archive run (see the Production checklist).
+- Next action needs: configure local Google OAuth credentials and resolve the recorded Astro/Vite local verification failure. Separately, confirm the first archive run (see the Production checklist).
 
 ## Gate protocol
 
@@ -268,10 +268,14 @@ Source of the feature list: the Feature Tier List (Tier 1). Edit and delete of y
 | 2026-10-08 | The repo's `PLAN.md` is the source of truth; the Notion copy is a snapshot refreshed at each phase gate. | Decided (owner) |
 | 2026-10-08 | The Phase 5 approval gate is skipped; the first scheduled run is recorded as a non-blocking checklist item. | Decided (owner) |
 | 2026-10-08 | Own-note edit and delete are part of Tier 1 (Phase 7). | Decided (owner) |
-| 2026-10-08 | Migrations stay additive, and Phase 6+ is not deployed to production, until the first archive run is confirmed. | Proposed, needs owner confirmation |
+| 2026-10-08 | Posting requires an approved sign-in once Phase 7 ships. | Decided (owner) |
+| 2026-10-08 | The owner creates the first `super_admin` with a one-time `wrangler d1 execute` command they run themselves. | Decided (owner) |
+| 2026-10-08 | Migrations stay additive, and Phase 6+ is not deployed to production, until the first archive run is confirmed. | Decided (owner) |
+| 2026-10-08 | Open questions not explicitly answered by the owner use the proposed defaults in this plan. | Decided (owner) |
+| 2026-10-08 | Phase 6 uses server-side Google OpenID Connect authorization-code flow with PKCE and verified ID tokens; D1 holds opaque session records and signed `HttpOnly`, `Secure`, `SameSite=Lax` cookies carry only the session reference. This keeps Google tokens out of browser storage, works with `session: false`, and allows server-side revocation. | Decided (implementation) |
 | 2026-10-08 | Phases 6 to 12 run in the order listed (donation corner last; it may move earlier if the owner prefers income sooner). | Proposed, needs owner confirmation |
 
-### Phase 6: Sign-in, roles, and approval queue (not started)
+### Phase 6: Sign-in, roles, and approval queue (locally implemented; verification blocked)
 
 **Goal:** real accounts, so codenames, own-note rules, birthdays, and profile photos have an owner. This phase is the foundation for all later Tier 1 phases.
 
@@ -290,6 +294,8 @@ Source of the feature list: the Feature Tier List (Tier 1). Edit and delete of y
 **How the owner verifies:** sign in with a test Google account, approve it from the queue, then confirm a pending account is refused on an approved-only endpoint. `pnpm run check` and `pnpm run build` pass. No change to Home, Wall, Archive visuals beyond the sign-in entry point.
 
 **Notes:** pins created before sign-in have only a device-token hash and cannot be linked to an account later. Acceptable while the site holds test data.
+
+**2026-10-08 local implementation record:** Added additive migration `0002_auth.sql` and applied it with `pnpm wrangler d1 migrations apply DB --local` only. It creates `users`, `sessions`, and `admin_audit`; no remote D1 command ran. Added the Google OIDC start/callback flow, PKCE, ID-token signature/claim verification, D1 sessions, signed `HttpOnly` cookie handling, CSRF checks, sign-in/sign-out/who-am-I/approved-only endpoints, a Zod-validated join request, and an admin approval queue which records approval and decline actions. Role and status constants live in `src/config.ts`; `.dev.vars.example` names the required local variables only. Required verification is blocked: local credentials have not yet been created, and both `pnpm run check` and `pnpm run build` currently fail before source checking because Astro 7.3.6 / Vite 8.3.1 evaluates the CommonJS `picomatch` package without `require` in its config runner. `pnpm exec tsc --noEmit` passes for the application source. No production deploy, secret, or remote data write occurred.
 
 ### Phase 7: Wall rules and moderation (not started)
 

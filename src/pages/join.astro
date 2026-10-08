@@ -1,0 +1,86 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+---
+
+<BaseLayout title="Join">
+  <main class="auth-page content-width">
+    <p class="eyebrow"><span class="eyebrow-line"></span> JOIN THE ROOM</p>
+    <h1>Your alumni <em>request.</em></h1>
+    <p id="join-status">Checking your sign-in…</p>
+    <form id="join-form" hidden>
+      <label>Batch year <input id="batch-year" type="number" min="1996" max="2026" required /></label>
+      <label>Tell the approver a little about your connection to Baleno<textarea id="join-note" maxlength="500" required></textarea></label>
+      <button class="button button-primary" type="submit">Send request</button>
+    </form>
+  </main>
+</BaseLayout>
+
+<script>
+  interface AuthMeResponse { user: { status: string; batchYear: number | null } | null }
+
+  const status = document.querySelector<HTMLElement>("#join-status")
+  const form = document.querySelector<HTMLFormElement>("#join-form")
+  const batchYear = document.querySelector<HTMLInputElement>("#batch-year")
+  const note = document.querySelector<HTMLTextAreaElement>("#join-note")
+
+  async function csrfToken(): Promise<string> {
+    const response = await fetch("/api/auth/csrf", { credentials: "same-origin" })
+    const body = await response.json() as { token?: string }
+    if (!response.ok || !body.token) throw new Error("Could not prepare the request.")
+    return body.token
+  }
+
+  async function load(): Promise<void> {
+    const response = await fetch("/api/auth/me", { credentials: "same-origin" })
+    const body = await response.json() as AuthMeResponse
+
+    if (!body.user) {
+      window.location.assign("/sign-in")
+      return
+    }
+
+    if (body.user.status === "approved") {
+      if (status) status.textContent = "Your alumni account is approved. Welcome back."
+      return
+    }
+
+    if (body.user.status === "suspended") {
+      if (status) status.textContent = "This account is unavailable."
+      return
+    }
+
+    if (body.user.status === "declined") {
+      if (status) status.textContent = "Your earlier request was declined. You may submit an updated request."
+    } else if (status) {
+      status.textContent = "Your request will be reviewed by a Balik Baleno administrator."
+    }
+
+    if (batchYear && body.user.batchYear) batchYear.value = String(body.user.batchYear)
+    form?.removeAttribute("hidden")
+  }
+
+  form?.addEventListener("submit", async event => {
+    event.preventDefault()
+    if (!batchYear || !note || !status) return
+
+    try {
+      const token = await csrfToken()
+      const response = await fetch("/api/auth/join", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+        body: JSON.stringify({ batchYear: Number(batchYear.value), note: note.value }),
+      })
+      const body = await response.json() as { error?: { message: string } }
+
+      if (!response.ok) throw new Error(body.error?.message ?? "Your request could not be sent.")
+
+      form.hidden = true
+      status.textContent = "Request sent. An administrator will review it soon."
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : "Your request could not be sent."
+    }
+  })
+
+  void load()
+</script>

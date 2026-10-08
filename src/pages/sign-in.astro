@@ -1,0 +1,33 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+---
+
+<BaseLayout title="Sign in">
+  <main class="auth-page content-width">
+    <p class="eyebrow"><span class="eyebrow-line"></span> ALUMNI ACCESS</p>
+    <h1>Welcome <em>back.</em></h1>
+    <p>Sign in with Google to request access to the Balik Baleno alumni community.</p>
+    <button class="button button-primary" id="google-sign-in">Continue with Google</button>
+    <p class="auth-message" id="auth-message" aria-live="polite"></p>
+  </main>
+</BaseLayout>
+
+<script>
+  const signInButton = document.querySelector<HTMLButtonElement>("#google-sign-in")
+  const message = document.querySelector<HTMLElement>("#auth-message")
+
+  signInButton?.addEventListener("click", async () => {
+    signInButton.disabled = true
+    if (message) message.textContent = "Opening Google sign-in…"
+
+    const response = await fetch("/api/auth/google?returnTo=/join", { credentials: "same-origin" })
+
+    if (response.redirected) {
+      window.location.assign(response.url)
+      return
+    }
+
+    signInButton.disabled = false
+    if (message) message.textContent = "Sign-in is not configured yet. Please try again later."
+  })
+</script>

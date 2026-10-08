@@ -33,6 +33,8 @@ body,.app-shell{background:#f6f3e9;color:#293047}
 .brand-text strong{font-family:'Fraunces',serif;font-size:19px;font-weight:600;letter-spacing:-.035em;white-space:nowrap}
 .brand-text small{font-size:7px;color:#1b1a5f;letter-spacing:.18em}
 .site-header nav button{color:#3e4268}
+
+.auth-page{min-height:560px;padding-block:76px 100px;max-width:700px}.auth-page h1{font-family:'Fraunces',serif;font-size:clamp(52px,6vw,76px);font-weight:500;letter-spacing:-.06em;line-height:1;margin:20px 0}.auth-page h1 em{font-family:'Caveat',cursive;font-size:1.14em;font-style:normal;color:#a84d38}.auth-page>p{max-width:520px;color:#6b7385;font-size:14px;line-height:1.8}.auth-page .button{margin-top:18px}.auth-message{min-height:24px}.auth-page form{display:grid;gap:18px;max-width:520px;margin-top:30px}.auth-page label{display:grid;gap:8px;color:#1b1a5f;font-size:12px;font-weight:700}.auth-page input,.auth-page textarea{width:100%;border:1px solid #c3cbe0;background:#fcfaf3;color:#1b1a5f;padding:12px;font:inherit}.auth-page textarea{min-height:110px;resize:vertical}.approval-list{display:grid;gap:13px;margin-top:25px}.approval-card{border:1px solid #dfdbce;background:#fcfaf3;padding:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}.approval-card strong{font-family:'Fraunces',serif;font-size:21px;font-weight:500}.approval-card span{font-size:11px;color:#6b7385}.approval-card p{width:100%;margin:0;color:#6b7385;font-size:12px;line-height:1.6}.approval-card .button{min-height:38px;margin:0;padding-inline:14px}
 .site-header nav button:hover,.site-header nav .nav-active{color:#a7513c}
 .header-join{min-height:38px;padding:0 15px;border-color:#1b1a5f;background:#1b1a5f;color:#f8f5ec}
 .header-join:hover{background:#2b2a78}

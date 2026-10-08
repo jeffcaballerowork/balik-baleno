@@ -17,7 +17,12 @@
     },
   },
   "secrets": {
-    "required": ["OWNER_HASH_SALT"],
+    "required": [
+      "OWNER_HASH_SALT",
+      "GOOGLE_OAUTH_CLIENT_ID",
+      "GOOGLE_OAUTH_CLIENT_SECRET",
+      "SESSION_COOKIE_SECRET",
+    ],
   },
   "d1_databases": [
     {

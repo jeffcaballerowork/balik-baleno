@@ -1,1 +1,4 @@
 OWNER_HASH_SALT="replace-with-a-random-secret"
+GOOGLE_OAUTH_CLIENT_ID=""
+GOOGLE_OAUTH_CLIENT_SECRET=""
+SESSION_COOKIE_SECRET="replace-with-a-random-secret"
