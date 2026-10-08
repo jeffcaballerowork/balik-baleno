@@ -2,10 +2,8 @@
 
 ## STATUS
 
-- Phase: Phases 0 to 5 done (Phase 5 deployed, first scheduled run unconfirmed). Phase 6 implementation is complete; verification requires real Google OAuth credentials (not fake ones). Phases 7 to 12 are planned and not started.
-- State: BLOCKED
-- Last update: 2026-10-08
-- Next action: configure real local Google OAuth credentials to complete Phase 6 verification. Separately, confirm the first archive run (see the Production checklist).
+Verified locally: Google sign-in, join form with validation, pending state, approve and decline from /admin/approvals, admin_audit rows written, approved-only endpoint blocking.
+Not verified: sign-out (cookie and session-row deletion), CSRF rejection with a missing token, TypeScript pin and `pnpm run check`/`pnpm run build` (astro check does not support TypeScript 7).
 
 ## Gate protocol
 
@@ -276,6 +274,9 @@ Source of the feature list: the Feature Tier List (Tier 1). Edit and delete of y
 | 2026-10-08 | Phases 6 to 12 run in the order listed (donation corner last; it may move earlier if the owner prefers income sooner). | Proposed, needs owner confirmation |
 
 ### Phase 6: Sign-in, roles, and approval queue (locally implemented; verification blocked)
+
+Verified locally: Google sign-in, join form with validation, pending state, approve and decline from /admin/approvals, admin_audit rows written, approved-only endpoint blocking.
+Not verified: sign-out (cookie and session-row deletion), CSRF rejection with a missing token, TypeScript pin and `pnpm run check`/`pnpm run build` (astro check does not support TypeScript 7).
 
 **Goal:** real accounts, so codenames, own-note rules, birthdays, and profile photos have an owner. This phase is the foundation for all later Tier 1 phases.
 
