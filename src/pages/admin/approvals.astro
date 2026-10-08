@@ -43,13 +43,15 @@ import BaseLayout from "../../layouts/BaseLayout.astro"
       email.textContent = user.email
       const details = document.createElement("p")
       details.textContent = `Batch ${user.batch_year ?? "not provided"} · ${user.join_note ?? "No note"}`
-      article.append(name, email, details)
+      article.appendChild(name)
+      article.appendChild(email)
+      article.appendChild(details)
       for (const action of ["approve", "decline"] as const) {
         const button = document.createElement("button")
         button.className = action === "approve" ? "button button-primary" : "button button-outline"
         button.textContent = action === "approve" ? "Approve" : "Decline"
         button.addEventListener("click", () => { void review(user.id, action) })
-        article.append(button)
+        article.appendChild(button)
       }
       return article
     }))
