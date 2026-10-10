@@ -2,8 +2,18 @@
 
 ## STATUS
 
-Verified locally: Google sign-in, join form with validation, pending state, approve and decline from /admin/approvals, admin_audit rows written, approved-only endpoint blocking.
-Not verified: sign-out (cookie and session-row deletion), CSRF rejection with a missing token, TypeScript pin and `pnpm run check`/`pnpm run build` (astro check does not support TypeScript 7).
+Verified locally:
+- Google sign-in, /join form with validation, pending state
+- Sign-out: cookie cleared, session row deleted, /api/auth/me returns null
+- CSRF on POST /api/auth/signout: 200 with valid token and Origin; 403 csrf_invalid with wrong Origin, missing token, or wrong token
+- TypeScript pinned to 6.0.3 (astro check does not support TS 7); `pnpm run check` and `pnpm run build` pass with 0 errors
+
+Not verified:
+- Approve and decline from /admin/approvals and their admin_audit rows
+- Approved-only endpoints blocking pending, declined, and signed-out users; admin endpoints blocking normal users
+- CSRF rejection on /api/admin/approvals/* specifically
+- First-admin bootstrap for production (local promotion was done by a manual local D1 UPDATE)
+
 
 ## Gate protocol
 
