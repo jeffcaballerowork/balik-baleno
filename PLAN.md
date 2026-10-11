@@ -29,7 +29,7 @@ Before stopping at any gate: (1) update PLAN.md, including the STATUS block, and
 | 3 — Mock-data Worker | Deployed | Initial deployment recorded below. Superseded on 2026-10-08 by the deployment that includes the Phase 4 code. |
 | 4 — D1 and wall API | Verified in production (2026-10-08) | Remote schema exists (pins, reactions, reports, walls). A test pin created on the live site survived a hard refresh and appeared in the remote D1 query. |
 | 5 — Archive cron | Deployed (2026-10-08); first scheduled run unconfirmed | Companion Worker uploaded and cron trigger registered. First run is 2026-10-08 16:00 UTC (midnight PHT); expect a `walls` row for 2026-10-08. |
-| 6 — Sign-in, roles, approval queue | Not started | Foundation for every Tier 1 feature below. See the Tier 1 development plan. |
+| 6 — Sign-in, roles, approval queue | Implemented; partially verified (local) | Verified: sign-in, join, sign-out, sign-out CSRF, check/build on TS 6.0.3. Not verified: approve/decline + admin_audit rows, approved-only/admin blocking, CSRF on approvals, prod bootstrap. See STATUS. |
 | 7 — Wall rules and moderation | Not started | Codenames, own-note move/edit/delete, caps, report-and-hide, admin review. |
 | 8 — Daily prompt, throwbacks, pin look | Not started | |
 | 9 — Birthday celebrant wall | Not started | |
@@ -283,10 +283,10 @@ Source of the feature list: the Feature Tier List (Tier 1). Edit and delete of y
 | 2026-10-08 | Phase 6 uses server-side Google OpenID Connect authorization-code flow with PKCE and verified ID tokens; D1 holds opaque session records and signed `HttpOnly`, `Secure`, `SameSite=Lax` cookies carry only the session reference. This keeps Google tokens out of browser storage, works with `session: false`, and allows server-side revocation. | Decided (implementation) |
 | 2026-10-08 | Phases 6 to 12 run in the order listed (donation corner last; it may move earlier if the owner prefers income sooner). | Proposed, needs owner confirmation |
 
-### Phase 6: Sign-in, roles, and approval queue (locally implemented; verification blocked)
+### Phase 6: Sign-in, roles, and approval queue (implemented; partially verified locally)
 
-Verified locally: Google sign-in, join form with validation, pending state, approve and decline from /admin/approvals, admin_audit rows written, approved-only endpoint blocking.
-Not verified: sign-out (cookie and session-row deletion), CSRF rejection with a missing token, TypeScript pin and `pnpm run check`/`pnpm run build` (astro check does not support TypeScript 7).
+Verified locally (top STATUS block is truth): Google sign-in, /join form with validation, pending state; sign-out (cookie cleared, session row deleted, /api/auth/me returns null); CSRF on POST /api/auth/signout (200 with valid token and Origin; 403 csrf_invalid with wrong Origin, missing token, or wrong token); TypeScript pinned to exactly 6.0.3 with `pnpm run check` (0 errors, 0 warnings, 7 hints) and `pnpm run build` passing.
+Not verified: approve and decline from /admin/approvals and their admin_audit rows; approved-only endpoints blocking pending, declined, and signed-out users and admin endpoints blocking normal users; CSRF rejection on /api/admin/approvals/* specifically; first-admin bootstrap for production (local promotion was done by a manual local D1 UPDATE).
 
 **Goal:** real accounts, so codenames, own-note rules, birthdays, and profile photos have an owner. This phase is the foundation for all later Tier 1 phases.
 
@@ -410,10 +410,11 @@ Not verified: sign-out (cookie and session-row deletion), CSRF rejection with a 
 ### Open questions
 
 1. Who moderates the wall, and may current students post?
-2. Does posting require an approved sign-in once Phase 7 ships? (Proposal: yes.)
-3. Per-user daily pin limit, and the edit-window length. (Proposal: same as the ten-minute move window.)
-4. Should deleting a note also reduce the archived count for its day? (Proposal: yes, recomputed in the same batch.)
+2. Does posting require an approved sign-in once Phase 7 ships? DECIDED (owner, 2026-10-11): yes — posting requires an approved account, with auth + verifyCsrfRequest.
+3. Per-user daily pin limit, and the edit-window length. DECIDED (owner, 2026-10-11): 2 notes per user per day; wall cap raised from 150 to 200 per day (update every place 150 appears: code, PLAN.md, UI text); edit and move window both 10 minutes (WALL_CONFIG.pinMoveWindowMs).
+4. Should deleting a note also reduce the archived count for its day? DECIDED (owner, 2026-10-11): yes, recomputed in the same batch.
 5. Report auto-hide threshold. (Proposal: 3 distinct reporters.)
+Phase 7 moderation decisions DECIDED (owner, 2026-10-11): codename first set free, then 1 change per 7 days; use a separate `hidden` INTEGER column on pins (do not extend status); admin reposition is current wall date only while hidden/archived review is a separate read-only admin list.
 6. How the first `super_admin` is created. (Proposal: the owner runs a one-time D1 command.)
 7. Who supplies the first teacher list for Phase 10?
 8. Donation methods: GCash only, or add PayPal/Ko-fi?
