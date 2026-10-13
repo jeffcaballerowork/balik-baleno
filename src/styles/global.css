@@ -199,6 +199,14 @@ body,.app-shell{background:#f6f3e9;color:#293047}
   gap: 10px;
   margin-top: 20px;
 }
+.daily-prompt {
+  text-align: center;
+  padding: 20px 0;
+  font-family: 'Fraunces', serif;
+  font-size: 1.25rem;
+  color: #1b1a5f;
+  border-top: 1px solid #dfdbce;
+}
 @media(max-width:540px){
   .brand-text strong{font-size:17px}
   .brand-text small{font-size:6px}
