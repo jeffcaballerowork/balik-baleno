@@ -34,15 +34,14 @@ Before stopping at any gate: (1) update PLAN.md, including the STATUS block, and
 | 1 — Shell scaffold | Done | Shell, CSS, routes, and behavior comparisons passed; Phase 3 deployment included the shell. |
 | 2 — Page ports | Done | All eight pages passed the recorded screenshot threshold and normalized DOM checks below. |
 | 3 — Mock-data Worker | Deployed | Initial deployment recorded below. Superseded on 2026-10-08 by the deployment that includes the Phase 4 code. |
-| 4 — D1 and wall API | Verified in production (2026-10-08) | Remote schema exists (pins, reactions, reports, walls). A test pin created on the live site survived a hard refresh and appeared in the remote D1 query. |
 | | 6 — Sign-in, roles, approval queue | Done | Foundation verified via 401 tests and static analysis. |
 | | 7 — Wall rules and moderation | Done | Codenames, own-note rules, report-and-hide, and admin review implemented and verified (401 tests). |
 | | 8 — Daily prompt, throwbacks, pin look | In Progress | See docs/specs/phase-8.md |
-| | 9 — Birthday celebrant wall | Not started | |
-| | 10 — UI/UX: Auth Modal for pinning | Not started | |
-| 9 — Birthday celebrant wall | Not started | |
-| 10 — Teacher tribute corner | Not started | |
-| 11 — Now/before profile photos (R2) | Not started | |
+| | 9 — UI/UX: Auth Modal for pinning | Not started | |
+| | 10 — Birthday celebrant wall | Not started | |
+| | 11 — Teacher tribute corner | Not started | |
+| | 12 — Now/before profile photos (R2) | Not started | |
+| | 13 — About the author and donation corner | Not started | |
 | 12 — About the author and donation corner | Not started | |
 
 Where a phase section below disagrees with this table or with the Production checklist, this table and the checklist win. The phase sections for Phases 0 to 5 are a historical record written at the time and are not rewritten.
