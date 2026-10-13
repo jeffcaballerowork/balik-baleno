@@ -25,6 +25,10 @@ import WallCountdown from "./WallCountdown";
   <div class=\"daily-prompt content-width\">
     <span id=\"daily-prompt-text\">Loading prompt...</span>
   </div>
+  <div id=\"throwbacks\" class=\"throwbacks content-width\">
+    <h3>On this day...</h3>
+    <div id=\"throwback-list\" class=\"throwback-list\"></div>
+  </div>
   <div class="wall-frame">
     <div class="wall-frame-top">
       <span>BALIK BALENO <span class="frame-star">✳</span> FREEDOM WALL</span>
@@ -48,4 +52,21 @@ import WallCountdown from "./WallCountdown";
     if (el) el.textContent = body.prompt
   }
   loadPrompt()
+
+  async function loadThrowbacks() {
+    const response = await fetch(\"/api/throwbacks\")
+    const body = await response.json() as {pins: {id: string, body: string, author_name: string, wall_date: string}[]}
+    const list = document.getElementById(\"throwback-list\")
+    if (list && body.pins.length > 0) {
+      list.innerHTML = body.pins.map(p => \`
+        <div class=\"throwback-card\">
+            <p>\${p.body}</p>
+            <small>\${p.wall_date}</small>
+        </div>
+      \`).join(\"\")
+    } else if (list) {
+      list.parentElement!.style.display = 'none'
+    }
+  }
+  loadThrowbacks()
 </script>

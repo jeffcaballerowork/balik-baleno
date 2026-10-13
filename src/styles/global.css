@@ -207,6 +207,23 @@ body,.app-shell{background:#f6f3e9;color:#293047}
   color: #1b1a5f;
   border-top: 1px solid #dfdbce;
 }
+.throwbacks {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f8f5ec;
+  border: 1px solid #dfdbce;
+}
+.throwback-list {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+}
+.throwback-card {
+  min-width: 200px;
+  padding: 10px;
+  background: white;
+  border: 1px solid #dfdbce;
+}
 @media(max-width:540px){
   .brand-text strong{font-size:17px}
   .brand-text small{font-size:6px}
