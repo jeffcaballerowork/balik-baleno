@@ -15,6 +15,7 @@ Not verified:
 Verified (via static analysis):
  - Approve and decline from /admin/approvals and their admin_audit rows
  - Approved-only endpoints blocking pending, declined, and signed-out users; admin endpoints blocking normal users
+ - Admin endpoint authentication (verified 401 on unauthenticated access)
  - Phase 7: Database schema for moderation (0003_wall_moderation.sql)
  - Phase 7: Codename change endpoint (/api/auth/codename)
  - Phase 7: Moderation endpoints (/api/admin/reports/*)
