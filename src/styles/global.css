@@ -169,6 +169,36 @@ body,.app-shell{background:#f6f3e9;color:#293047}
   .brand-logo{width:38px;height:38px}
   .wall-viewport{height:calc(100svh - 156px);min-height:390px}
 }
+
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: #17163fdc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.auth-modal {
+  background: #f6f3e9;
+  padding: 40px;
+  border-radius: 20px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+.auth-modal h2 {
+  font-family: 'Fraunces', serif;
+  margin-top: 0;
+}
+.auth-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
 @media(max-width:540px){
   .brand-text strong{font-size:17px}
   .brand-text small{font-size:6px}

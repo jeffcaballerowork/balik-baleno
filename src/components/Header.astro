@@ -66,7 +66,22 @@ const isSignedIn = !!sessionCookie;
     button.addEventListener("click", () => {
       const destination = button.dataset.nav;
       if (!destination) return;
-      window.location.assign(destination);
+      if (destination === "/create") {
+        fetch("/api/auth/me")
+          .then(res => res.json())
+          .then(data => {
+            if ((data as any).user) {
+              window.location.assign(destination);
+            } else {
+              (window as any).openAuthModal();
+            }
+          })
+          .catch(() => {
+            window.location.assign(destination);
+          });
+      } else {
+        window.location.assign(destination);
+      }
     });
   }
 

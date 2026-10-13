@@ -2,6 +2,7 @@
 import Announcement from "../components/Announcement.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
+import AuthModal from "../components/AuthModal";
 import NoteLightbox from "../components/NoteLightbox";
 import "../styles/global.css";
 
@@ -43,6 +44,7 @@ const activePath = Astro.url.pathname;
       <Header activePath={activePath} />
       <slot />
       <Footer />
+      <AuthModal client:load />
       <NoteLightbox client:idle />
     </div>
   </body>
