@@ -104,6 +104,9 @@ body,.app-shell{background:#f6f3e9;color:#293047}
 
 /* Original paper variety, with teal and green shifted to blue */
 .note,.editor-note{color:#364054}
+.note,.editor-note{
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
 .note-sticky,.note-yellow,.editor-note.note-yellow,.template-swatch.note-sticky{background:#f5d980}
 .note-pink{background:#e8b7a9}
 .note-blue{background:#bdd4ec}
