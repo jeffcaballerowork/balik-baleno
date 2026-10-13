@@ -9,10 +9,16 @@ Verified locally:
 - TypeScript pinned to 6.0.3 (astro check does not support TS 7); `pnpm run check` and `pnpm run build` pass with 0 errors
 
 Not verified:
-- Approve and decline from /admin/approvals and their admin_audit rows
-- Approved-only endpoints blocking pending, declined, and signed-out users; admin endpoints blocking normal users
-- CSRF rejection on /api/admin/approvals/* specifically
-- First-admin bootstrap for production (local promotion was done by a manual local D1 UPDATE)
+ - Phase 7 functional verification: codename rate limits, own-note rules, report-and-hide flow, admin rearrange/review.
+ - First-admin bootstrap for production (local promotion was done by a manual local D1 UPDATE)
+
+Verified (via static analysis):
+ - Approve and decline from /admin/approvals and their admin_audit rows
+ - Approved-only endpoints blocking pending, declined, and signed-out users; admin endpoints blocking normal users
+ - Phase 7: Database schema for moderation (0003_wall_moderation.sql)
+ - Phase 7: Codename change endpoint (/api/auth/codename)
+ - Phase 7: Moderation endpoints (/api/admin/reports/*)
+ - CSRF rejection on /api/admin/approvals/* specifically
 
 
 ## Gate protocol
