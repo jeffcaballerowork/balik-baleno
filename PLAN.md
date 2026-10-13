@@ -39,6 +39,7 @@ Before stopping at any gate: (1) update PLAN.md, including the STATUS block, and
 | | 7 — Wall rules and moderation | Done | Codenames, own-note rules, report-and-hide, and admin review implemented and verified (401 tests). |
 | | 8 — Daily prompt, throwbacks, pin look | In Progress | See docs/specs/phase-8.md |
 | | 9 — Birthday celebrant wall | Not started | |
+| | 10 — UI/UX: Auth Modal for pinning | Not started | |
 | 9 — Birthday celebrant wall | Not started | |
 | 10 — Teacher tribute corner | Not started | |
 | 11 — Now/before profile photos (R2) | Not started | |
