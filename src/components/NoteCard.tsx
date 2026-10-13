@@ -7,6 +7,8 @@ interface NoteCardProps {
 
   compact?: boolean
 
+  edited?: boolean
+
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void
 
   style?: CSSProperties
@@ -18,6 +20,8 @@ export default function NoteCard({
   note,
 
   compact = false,
+
+  edited = false,
 
   onClick,
 
@@ -49,7 +53,7 @@ export default function NoteCard({
         </span>
       )}
       <span className="note-copy">{note.text}</span>
-      {note.author && <span className="note-author">{`— ${note.author}`}</span>}
+      {note.author && <span className="note-author">{`— ${note.author}${edited ? " · edited" : ""}`}</span>}
       {note.doodle && <span className="note-doodle">{note.doodle}</span>}
       {note.drawing && (
         <svg className="note-drawing" viewBox="0 0 240 240" aria-hidden="true">

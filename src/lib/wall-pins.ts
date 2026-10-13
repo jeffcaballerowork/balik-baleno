@@ -47,7 +47,10 @@ const pinRowSchema = z.object({
   drawing_json: z.string().nullable(),
   image_key: z.string().nullable(),
   owner_hash: z.string(),
+  user_id: z.string().nullable(),
   created_at: z.string(),
+  edited_at: z.string().nullable(),
+  hidden: z.number().int(),
 })
 
 type PinRow = z.infer<typeof pinRowSchema>
@@ -61,13 +64,18 @@ export interface WallPin extends Omit<
   id: string
   zIndex: number
   canMove: boolean
+  canEdit: boolean
+  canDelete: boolean
+  edited: boolean
+  hidden: boolean
   reactionCounts: ReactionCounts
   myReactions: ReactionState
 }
 
 function toNote(
   row: PinRow,
-  ownerHash: string | null,
+  viewerUserId: string | null,
+  isModerator: boolean,
   now: number,
   isCurrentWall: boolean,
   reactionCounts: ReactionCounts,
@@ -81,6 +89,11 @@ function toNote(
     ? row.image_key
     : undefined
   const createdAt = Date.parse(row.created_at)
+  const isOwner = viewerUserId !== null && row.user_id !== null && row.user_id === viewerUserId
+  const withinWindow =
+    Number.isFinite(createdAt) &&
+    createdAt <= now &&
+    now - createdAt <= WALL_CONFIG.pinMoveWindowMs
   const defaultInk =
     row.kind === "card"
       ? row.color === "mustard"
@@ -99,11 +112,12 @@ function toNote(
     zIndex: row.z_index,
     canMove:
       isCurrentWall &&
-      ownerHash !== null &&
-      row.owner_hash === ownerHash &&
-      Number.isFinite(createdAt) &&
-      createdAt <= now &&
-      now - createdAt <= WALL_CONFIG.pinMoveWindowMs,
+      row.hidden === 0 &&
+      (isModerator || (isOwner && withinWindow)),
+    canEdit: isOwner && withinWindow && row.hidden === 0,
+    canDelete: isOwner || isModerator,
+    edited: row.edited_at !== null,
+    hidden: row.hidden === 1,
     reactionCounts,
     myReactions,
     color: row.color ?? undefined,
@@ -118,9 +132,13 @@ function toNote(
 export async function getWallPins(
   wallDate: string,
   deviceToken: string | null,
+  viewerUserId: string | null = null,
+  options: { includeHidden?: boolean; isModerator?: boolean } = {},
 ): Promise<WallPin[]> {
   const now = Date.now()
   const isCurrentWall = wallDate === getManilaDate()
+  const isModerator = options.isModerator ?? false
+  const includeHidden = (options.includeHidden ?? false) && isModerator
   let ownerHash: string | null = null
 
   if (deviceToken) {
@@ -133,9 +151,9 @@ export async function getWallPins(
   const pinResult = await env.DB.prepare(
     `SELECT id, kind, body, author_name, x_pct, y_pct, rotation, z_index,
             color, font, ink, doodle, drawing_json, image_key, owner_hash,
-            created_at
+            user_id, created_at, edited_at, hidden
      FROM pins
-     WHERE wall_date = ? AND status = 'active'
+     WHERE wall_date = ? AND status = 'active'${includeHidden ? "" : " AND hidden = 0"}
      ORDER BY created_at ASC, z_index ASC`,
   )
     .bind(wallDate)
@@ -150,7 +168,7 @@ export async function getWallPins(
             SUM(CASE WHEN voter_hash = ? THEN 1 ELSE 0 END) AS reacted
      FROM reactions
      WHERE pin_id IN (
-       SELECT id FROM pins WHERE wall_date = ? AND status = 'active'
+       SELECT id FROM pins WHERE wall_date = ? AND status = 'active'${includeHidden ? "" : " AND hidden = 0"}
      )
      GROUP BY pin_id, kind`,
   )
@@ -181,6 +199,6 @@ export async function getWallPins(
       state[reaction.kind] = reaction.reacted > 0
     }
 
-    return toNote(row, ownerHash, now, isCurrentWall, counts, state)
+    return toNote(row, viewerUserId, isModerator, now, isCurrentWall, counts, state)
   })
 }

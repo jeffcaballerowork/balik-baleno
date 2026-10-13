@@ -46,7 +46,7 @@ export const GET: APIRoute = async ({ url }) => {
     const result = await env.DB.prepare(
       `SELECT wall_date AS date, COUNT(*) AS count
        FROM pins
-       WHERE wall_date >= ? AND wall_date < ? AND status = 'active'
+       WHERE wall_date >= ? AND wall_date < ? AND status = 'active' AND hidden = 0
        GROUP BY wall_date
        ORDER BY wall_date ASC`,
     )

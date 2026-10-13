@@ -12,6 +12,8 @@ import {
   logApiError,
 } from "../../lib/api-response"
 
+import { getSessionUser, isAdmin, isApproved, verifyCsrfRequest } from "../../lib/auth"
+
 import { getManilaDate } from "../../lib/wall-date"
 
 import { hashOwnerToken } from "../../lib/owner-hash"
@@ -55,10 +57,22 @@ const pinInputSchema = z.object({
 interface PinCounts {
   wall_count: number
 
-  device_count: number
+  user_count: number
 }
 
 export const POST: APIRoute = async ({ request }) => {
+  const user = await getSessionUser(request)
+
+  if (!user) return errorResponse(401, "sign_in_required", "Please sign in first.")
+
+  if (!isApproved(user)) {
+    return errorResponse(403, "approval_required", "Only approved alumni can post notes.")
+  }
+
+  if (!(await verifyCsrfRequest(request))) {
+    return errorResponse(403, "csrf_invalid", "This request could not be verified.")
+  }
+
   let body: unknown
 
   try {
@@ -105,6 +119,10 @@ export const POST: APIRoute = async ({ request }) => {
 
   const drawingJson = pin.drawing.length ? JSON.stringify(pin.drawing) : null
 
+  // Notes are signed with the author's codename when set; otherwise the
+  // supplied display value is kept so legacy anonymous posts still work.
+  const signature = user.codename ?? pin.authorName
+
   try {
     const ownerHash = await hashOwnerToken(pin.deviceToken, env.OWNER_HASH_SALT)
 
@@ -112,7 +130,7 @@ export const POST: APIRoute = async ({ request }) => {
       `INSERT INTO pins (
         id, wall_date, kind, color, body, author_name, font, ink, doodle,
         drawing_json, image_key, thumb_key, x_pct, y_pct, rotation, z_index,
-        owner_hash, status, created_at, moved_at
+        owner_hash, user_id, status, hidden, created_at, moved_at, edited_at
       )
       SELECT
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?,
@@ -120,13 +138,13 @@ export const POST: APIRoute = async ({ request }) => {
           (SELECT MAX(z_index) + 1 FROM pins WHERE wall_date = ?),
           1
         ),
-        ?, 'active', ?, NULL
+        ?, ?, 'active', 0, ?, NULL, NULL
       WHERE
         (SELECT COUNT(*) FROM pins
-         WHERE wall_date = ? AND status = 'active') < ?
+         WHERE wall_date = ? AND status = 'active' AND hidden = 0) < ?
         AND
         (SELECT COUNT(*) FROM pins
-         WHERE wall_date = ? AND owner_hash = ?) < ?`,
+         WHERE wall_date = ? AND user_id = ?) < ?`,
     )
 
       .bind(
@@ -140,7 +158,7 @@ export const POST: APIRoute = async ({ request }) => {
 
         pin.body,
 
-        pin.authorName,
+        signature,
 
         pin.font,
 
@@ -160,6 +178,8 @@ export const POST: APIRoute = async ({ request }) => {
 
         ownerHash,
 
+        user.id,
+
         createdAt,
 
         wallDate,
@@ -168,9 +188,9 @@ export const POST: APIRoute = async ({ request }) => {
 
         wallDate,
 
-        ownerHash,
+        user.id,
 
-        WALL_CONFIG.dailyDevicePinLimit,
+        WALL_CONFIG.dailyUserPinLimit,
       )
 
       .run()
@@ -179,12 +199,12 @@ export const POST: APIRoute = async ({ request }) => {
       const counts = await env.DB.prepare(
         `SELECT
           (SELECT COUNT(*) FROM pins
-           WHERE wall_date = ? AND status = 'active') AS wall_count,
+           WHERE wall_date = ? AND status = 'active' AND hidden = 0) AS wall_count,
           (SELECT COUNT(*) FROM pins
-           WHERE wall_date = ? AND owner_hash = ?) AS device_count`,
+           WHERE wall_date = ? AND user_id = ?) AS user_count`,
       )
 
-        .bind(wallDate, wallDate, ownerHash)
+        .bind(wallDate, wallDate, user.id)
 
         .first<PinCounts>()
 
@@ -192,13 +212,13 @@ export const POST: APIRoute = async ({ request }) => {
         throw new Error("Unable to determine current wall pin counts.")
       }
 
-      if (counts.device_count >= WALL_CONFIG.dailyDevicePinLimit) {
+      if (!isAdmin(user) && counts.user_count >= WALL_CONFIG.dailyUserPinLimit) {
         return errorResponse(
           429,
 
           "daily_pin_limit",
 
-          `You have reached your daily limit of ${WALL_CONFIG.dailyDevicePinLimit} pins.`,
+          `You have reached your daily limit of ${WALL_CONFIG.dailyUserPinLimit} pins.`,
         )
       }
 

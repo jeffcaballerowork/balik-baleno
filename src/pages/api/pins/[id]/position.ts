@@ -12,15 +12,13 @@ import {
   logApiError,
 } from "../../../../lib/api-response"
 
-import { hashOwnerToken } from "../../../../lib/owner-hash"
+import { getSessionUser, isAdmin, isApproved, verifyCsrfRequest } from "../../../../lib/auth"
 
 import { getManilaDate } from "../../../../lib/wall-date"
 
 export const prerender = false
 
 const positionInputSchema = z.object({
-  deviceToken: z.string().regex(/^[a-f0-9]{64}$/),
-
   x: z.number().min(0).max(WALL_CONFIG.logicalCanvasWidth),
 
   y: z.number().min(0).max(WALL_CONFIG.logicalCanvasHeight),
@@ -29,9 +27,11 @@ const positionInputSchema = z.object({
 const pinIdSchema = z.string().min(1).max(64)
 
 interface PinOwnerRow {
-  owner_hash: string
+  user_id: string | null
 
   created_at: string
+
+  hidden: number
 }
 
 export const PATCH: APIRoute = async ({ params, request }) => {
@@ -39,6 +39,18 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
   if (!parsedId.success) {
     return errorResponse(400, "invalid_pin_id", "The pin ID is invalid.")
+  }
+
+  const user = await getSessionUser(request)
+
+  if (!user) return errorResponse(401, "sign_in_required", "Please sign in first.")
+
+  if (!isApproved(user)) {
+    return errorResponse(403, "approval_required", "Only approved alumni can move notes.")
+  }
+
+  if (!(await verifyCsrfRequest(request))) {
+    return errorResponse(403, "csrf_invalid", "This request could not be verified.")
   }
 
   let body: unknown
@@ -65,16 +77,6 @@ export const PATCH: APIRoute = async ({ params, request }) => {
     )
   }
 
-  if (!env.OWNER_HASH_SALT) {
-    return errorResponse(
-      500,
-
-      "server_misconfigured",
-
-      "The note position could not be saved.",
-    )
-  }
-
   const wallDate = getManilaDate()
 
   const now = new Date()
@@ -85,15 +87,11 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
   const cutoff = new Date(nowMs - WALL_CONFIG.pinMoveWindowMs).toISOString()
 
+  const moderator = isAdmin(user)
+
   try {
-    const ownerHash = await hashOwnerToken(
-      parsed.data.deviceToken,
-
-      env.OWNER_HASH_SALT,
-    )
-
     const pin = await env.DB.prepare(
-      `SELECT owner_hash, created_at
+      `SELECT user_id, created_at, hidden
        FROM pins
        WHERE id = ? AND wall_date = ? AND status = 'active'`,
     )
@@ -102,7 +100,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
       .first<PinOwnerRow>()
 
-    if (!pin) {
+    if (!pin || pin.hidden === 1) {
       return errorResponse(
         404,
 
@@ -112,57 +110,53 @@ export const PATCH: APIRoute = async ({ params, request }) => {
       )
     }
 
-    if (pin.owner_hash !== ownerHash) {
-      return errorResponse(
-        403,
+    const isOwner = pin.user_id !== null && pin.user_id === user.id
 
-        "not_pin_owner",
+    if (!moderator) {
+      if (!isOwner) {
+        return errorResponse(
+          403,
 
-        "Only the person who posted this note can move it.",
-      )
+          "not_pin_owner",
+
+          "Only the person who posted this note can move it.",
+        )
+      }
+
+      const createdAt = Date.parse(pin.created_at)
+
+      if (
+        !Number.isFinite(createdAt) ||
+        createdAt > nowMs ||
+        nowMs - createdAt > WALL_CONFIG.pinMoveWindowMs
+      ) {
+        return errorResponse(
+          403,
+
+          "move_window_expired",
+
+          "Notes can only be moved within 10 minutes of posting.",
+        )
+      }
     }
 
-    const createdAt = Date.parse(pin.created_at)
+    const ownerClause = moderator ? "" : " AND user_id = ? AND created_at >= ? AND created_at <= ?"
+    const binds: (string | number)[] = [
+      (parsed.data.x / WALL_CONFIG.logicalCanvasWidth) * 100,
+      (parsed.data.y / WALL_CONFIG.logicalCanvasHeight) * 100,
+      nowIso,
+      parsedId.data,
+      wallDate,
+    ]
 
-    if (
-      !Number.isFinite(createdAt) ||
-      createdAt > nowMs ||
-      nowMs - createdAt > WALL_CONFIG.pinMoveWindowMs
-    ) {
-      return errorResponse(
-        403,
-
-        "move_window_expired",
-
-        "Notes can only be moved within 10 minutes of posting.",
-      )
-    }
+    if (!moderator) binds.push(user.id, cutoff, nowIso)
 
     const result = await env.DB.prepare(
       `UPDATE pins
        SET x_pct = ?, y_pct = ?, moved_at = ?
-       WHERE id = ? AND wall_date = ? AND owner_hash = ? AND status = 'active'
-         AND created_at >= ? AND created_at <= ?`,
+       WHERE id = ? AND wall_date = ? AND status = 'active' AND hidden = 0${ownerClause}`,
     )
-
-      .bind(
-        (parsed.data.x / WALL_CONFIG.logicalCanvasWidth) * 100,
-
-        (parsed.data.y / WALL_CONFIG.logicalCanvasHeight) * 100,
-
-        nowIso,
-
-        parsedId.data,
-
-        wallDate,
-
-        ownerHash,
-
-        cutoff,
-
-        nowIso,
-      )
-
+      .bind(...binds)
       .run()
 
     if (result.meta.changes !== 1) {
@@ -173,6 +167,23 @@ export const PATCH: APIRoute = async ({ params, request }) => {
 
         "The note can no longer be moved.",
       )
+    }
+
+    if (moderator && !isOwner) {
+      await env.DB.prepare(
+        `INSERT INTO moderation_audit (
+           id, actor_user_id, action, target_pin_id, target_user_id, details_json, created_at
+         ) VALUES (?, ?, 'pin_moved_by_admin', ?, ?, ?, ?)`,
+      )
+        .bind(
+          crypto.randomUUID(),
+          user.id,
+          parsedId.data,
+          pin.user_id,
+          JSON.stringify({ wallDate, x: parsed.data.x, y: parsed.data.y }),
+          nowIso,
+        )
+        .run()
     }
 
     return jsonResponse(

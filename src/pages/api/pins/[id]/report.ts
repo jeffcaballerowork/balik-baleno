@@ -4,6 +4,8 @@ import { env } from "cloudflare:workers"
 
 import { z } from "zod"
 
+import { WALL_CONFIG } from "../../../../config"
+
 import {
   errorResponse,
   jsonResponse,
@@ -69,7 +71,8 @@ export const POST: APIRoute = async ({ params, request }) => {
        SELECT ?, ?, ?, ?
        WHERE EXISTS (
          SELECT 1 FROM pins WHERE id = ? AND status = 'active'
-       )`,
+       )
+       ON CONFLICT DO NOTHING`,
     )
       .bind(
         reportId,
@@ -81,11 +84,55 @@ export const POST: APIRoute = async ({ params, request }) => {
       .run()
 
     if (result.meta.changes !== 1) {
-      return errorResponse(
-        404,
-        "pin_not_found",
-        "This note is no longer available.",
+      const existing = await env.DB.prepare(
+        `SELECT
+           (SELECT COUNT(*) FROM pins WHERE id = ? AND status = 'active') AS pin_exists,
+           (SELECT COUNT(*) FROM reports
+            WHERE pin_id = ? AND reporter_hash = ?) AS already_reported`,
       )
+        .bind(parsedId.data, parsedId.data, reporterHash)
+        .first<{ pin_exists: number; already_reported: number }>()
+
+      if (!existing || existing.pin_exists === 0) {
+        return errorResponse(
+          404,
+          "pin_not_found",
+          "This note is no longer available.",
+        )
+      }
+
+      if (existing.already_reported > 0) {
+        return errorResponse(
+          409,
+          "already_reported",
+          "You have already reported this note.",
+        )
+      }
+
+      throw new Error("The report was not recorded.")
+    }
+
+    const reporterCount = await env.DB.prepare(
+      `SELECT COUNT(DISTINCT reporter_hash) AS distinct_reporters
+       FROM reports WHERE pin_id = ?`,
+    )
+      .bind(parsedId.data)
+      .first<{ distinct_reporters: number }>()
+
+    let hidden = false
+
+    if (
+      reporterCount &&
+      reporterCount.distinct_reporters >= WALL_CONFIG.reportHideThreshold
+    ) {
+      const hide = await env.DB.prepare(
+        `UPDATE pins SET hidden = 1
+         WHERE id = ? AND status = 'active' AND hidden = 0`,
+      )
+        .bind(parsedId.data)
+        .run()
+
+      hidden = hide.meta.changes === 1
     }
 
     return jsonResponse(
@@ -93,6 +140,7 @@ export const POST: APIRoute = async ({ params, request }) => {
         id: reportId,
         pinId: parsedId.data,
         createdAt,
+        hidden,
       },
       201,
     )

@@ -29,6 +29,8 @@ const userSchema = z.object({
   status: z.enum(AUTH_CONFIG.statuses),
   batch_year: z.number().int().nullable(),
   join_note: z.string().nullable(),
+  codename: z.string().nullable(),
+  codename_updated_at: z.string().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
 })
@@ -42,6 +44,8 @@ export type AuthUser = {
   status: UserStatus
   batchYear: number | null
   joinNote: string | null
+  codename: string | null
+  codenameUpdatedAt: string | null
   createdAt: string
   updatedAt: string
 }
@@ -187,6 +191,8 @@ function toAuthUser(row: UserRow): AuthUser {
     status: row.status,
     batchYear: row.batch_year,
     joinNote: row.join_note,
+    codename: row.codename,
+    codenameUpdatedAt: row.codename_updated_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -293,7 +299,8 @@ export async function getSessionUser(request: Request): Promise<AuthUser | null>
   const row = await env.DB.prepare(
     `SELECT
        u.id, u.google_subject, u.email, u.display_name, u.role, u.status,
-       u.batch_year, u.join_note, u.created_at, u.updated_at, s.id AS session_id
+       u.batch_year, u.join_note, u.codename, u.codename_updated_at,
+       u.created_at, u.updated_at, s.id AS session_id
      FROM sessions s
      INNER JOIN users u ON u.id = s.user_id
      WHERE s.id = ? AND s.token_hash = ? AND s.expires_at > ?`,
@@ -479,7 +486,8 @@ export async function findOrCreateGoogleUser(identity: { subject: string; email:
 
   const row = await env.DB.prepare(
     `SELECT id, google_subject, email, display_name, role, status,
-            batch_year, join_note, created_at, updated_at
+            batch_year, join_note, codename, codename_updated_at,
+            created_at, updated_at
      FROM users WHERE google_subject = ?`,
   )
     .bind(identity.subject)
@@ -499,9 +507,21 @@ export function serializeUser(user: AuthUser) {
     role: user.role,
     status: user.status,
     batchYear: user.batchYear,
+    codename: user.codename,
   }
 }
 
 export function isAdmin(user: AuthUser): boolean {
   return user.role === "super_admin" || user.role === "admin"
 }
+
+export function isApproved(user: AuthUser): boolean {
+  return user.status === "approved"
+}
+
+export const codenameSchema = z
+  .string()
+  .trim()
+  .min(AUTH_CONFIG.codenameMinLength)
+  .max(AUTH_CONFIG.codenameMaxLength)
+  .regex(/^[A-Za-z0-9 _-]+$/)

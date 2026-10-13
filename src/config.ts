@@ -1,9 +1,13 @@
 export const WALL_CONFIG = {
-  dailyPinLimit: 150,
+  dailyPinLimit: 200,
 
-  dailyDevicePinLimit: 5,
+  dailyUserPinLimit: 2,
 
   pinMoveWindowMs: 10 * 60 * 1000,
+
+  pinEditWindowMs: 10 * 60 * 1000,
+
+  reportHideThreshold: 3,
 
   logicalCanvasWidth: 1480,
 
@@ -26,6 +30,12 @@ export const AUTH_CONFIG = {
   batchYearMinimum: 1996,
 
   batchYearMaximum: 2026,
+
+  codenameMinLength: 3,
+
+  codenameMaxLength: 20,
+
+  codenameChangeCooldownMs: 7 * 24 * 60 * 60 * 1000,
 
   roles: ["super_admin", "admin", "alum"] as const,
 

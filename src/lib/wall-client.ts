@@ -11,6 +11,10 @@ export interface WallNote
   id: string
   zIndex: number
   canMove: boolean
+  canEdit: boolean
+  canDelete: boolean
+  edited: boolean
+  hidden: boolean
   reactionCounts: NoteReactionCounts
   myReactions: NoteReactionState
 }
@@ -164,6 +168,10 @@ function isWallNote(value: unknown): value is WallNote {
     typeof value.zIndex === "number" &&
     Number.isFinite(value.zIndex) &&
     typeof value.canMove === "boolean" &&
+    typeof value.canEdit === "boolean" &&
+    typeof value.canDelete === "boolean" &&
+    typeof value.edited === "boolean" &&
+    typeof value.hidden === "boolean" &&
     isReactionCounts(value.reactionCounts) &&
     isReactionState(value.myReactions) &&
     typeof value.kind === "string" &&
@@ -330,12 +338,40 @@ export async function fetchWall(
   return parseWallResponse(payload)
 }
 
+export interface EditPinResponse {
+  id: string
+  body: string
+  editedAt: string
+}
+
+export interface DeletePinResponse {
+  id: string
+  wallDate: string
+}
+
+async function csrfToken(): Promise<string> {
+  const response = await fetch("/api/auth/csrf", { credentials: "same-origin" })
+  const payload: unknown = await response.json()
+
+  if (!response.ok || !isRecord(payload) || typeof payload.token !== "string") {
+    throw new Error("Could not prepare the request.")
+  }
+
+  return payload.token
+}
+
 export async function createPin(
   input: CreatePinInput,
 ): Promise<CreatePinResponse> {
+  const token = await csrfToken()
   const response = await fetch("/api/pins", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-CSRF-Token": token,
+    },
     body: JSON.stringify({ ...input, deviceToken: getDeviceToken() }),
   })
 
@@ -366,11 +402,14 @@ export async function movePin(
   id: string,
   position: PinPosition,
 ): Promise<MovePinResponse> {
+  const token = await csrfToken()
   const response = await fetch(`/api/pins/${encodeURIComponent(id)}/position`, {
     method: "PATCH",
+    credentials: "same-origin",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
+      "X-CSRF-Token": token,
     },
     body: JSON.stringify({ ...position, deviceToken: getDeviceToken() }),
   })
@@ -402,6 +441,68 @@ export async function movePin(
     y: payload.y,
     movedAt: payload.movedAt,
   }
+}
+
+export async function editPin(id: string, body: string): Promise<EditPinResponse> {
+  const token = await csrfToken()
+  const response = await fetch(`/api/pins/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-CSRF-Token": token,
+    },
+    body: JSON.stringify({ body }),
+  })
+
+  const payload: unknown = await response.json()
+
+  if (!response.ok) {
+    const error = readApiError(payload, "The note could not be edited.")
+
+    throw new WallApiError(error.message, response.status, error.code)
+  }
+
+  if (
+    !isRecord(payload) ||
+    payload.id !== id ||
+    typeof payload.body !== "string" ||
+    typeof payload.editedAt !== "string" ||
+    !Number.isFinite(Date.parse(payload.editedAt))
+  ) {
+    throw new Error("The wall service returned an invalid edit response.")
+  }
+
+  return { id: payload.id, body: payload.body, editedAt: payload.editedAt }
+}
+
+export async function deletePin(id: string): Promise<DeletePinResponse> {
+  const token = await csrfToken()
+  const response = await fetch(`/api/pins/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+    headers: { Accept: "application/json", "X-CSRF-Token": token },
+  })
+
+  const payload: unknown = await response.json()
+
+  if (!response.ok) {
+    const error = readApiError(payload, "The note could not be deleted.")
+
+    throw new WallApiError(error.message, response.status, error.code)
+  }
+
+  if (
+    !isRecord(payload) ||
+    payload.id !== id ||
+    typeof payload.wallDate !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(payload.wallDate)
+  ) {
+    throw new Error("The wall service returned an invalid delete response.")
+  }
+
+  return { id: payload.id, wallDate: payload.wallDate }
 }
 
 export async function togglePinReaction(

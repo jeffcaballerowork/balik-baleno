@@ -1,0 +1,79 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro"
+---
+
+<BaseLayout title="Your profile">
+  <main class="auth-page content-width">
+    <p class="eyebrow"><span class="eyebrow-line"></span> PROFILE</p>
+    <h1>Your <em>codename.</em></h1>
+    <p id="profile-status">Loading your profile…</p>
+    <form id="codename-form">
+      <label>
+        Codename
+        <input
+          id="codename-input"
+          name="codename"
+          type="text"
+          minlength="3"
+          maxlength="20"
+          autocomplete="nickname"
+          placeholder="e.g. Sampaguita '09"
+        />
+      </label>
+      <p>3 to 20 characters: letters, numbers, spaces, hyphens, or underscores. Your first codename is free; after that it can be changed once every 7 days. It signs every note you post.</p>
+      <button class="button button-primary" type="submit">Save codename</button>
+    </form>
+  </main>
+</BaseLayout>
+
+<script>
+  interface MeResponse { user?: { codename?: string | null } | null; error?: { message: string } }
+  const status = document.querySelector<HTMLElement>("#profile-status")
+  const form = document.querySelector<HTMLFormElement>("#codename-form")
+  const input = document.querySelector<HTMLInputElement>("#codename-input")
+
+  async function csrfToken(): Promise<string> {
+    const response = await fetch("/api/auth/csrf", { credentials: "same-origin" })
+    const body = await response.json() as { token?: string }
+    if (!response.ok || !body.token) throw new Error("Could not prepare the form.")
+    return body.token
+  }
+
+  async function load(): Promise<void> {
+    const response = await fetch("/api/auth/me", { credentials: "same-origin" })
+    const body = await response.json() as MeResponse
+
+    if (!response.ok || !body.user) {
+      if (status) status.textContent = "Please sign in to set your codename."
+      form?.setAttribute("hidden", "")
+      return
+    }
+
+    if (input && typeof body.user.codename === "string") input.value = body.user.codename
+    if (status) status.textContent = body.user.codename
+      ? `Your notes are signed as ${body.user.codename}.`
+      : "Pick the name your notes will carry."
+  }
+
+  form?.addEventListener("submit", (event) => {
+    event.preventDefault()
+    void (async () => {
+      try {
+        const token = await csrfToken()
+        const response = await fetch("/api/auth/codename", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+          body: JSON.stringify({ codename: input?.value ?? "" }),
+        })
+        const body = await response.json() as MeResponse & { error?: { message: string } }
+        if (!response.ok || !body.user) throw new Error(body.error?.message ?? "Your codename could not be saved.")
+        if (status) status.textContent = `Saved. Your notes are signed as ${body.user.codename ?? input?.value}.`
+      } catch (error) {
+        if (status) status.textContent = error instanceof Error ? error.message : "Your codename could not be saved."
+      }
+    })()
+  })
+
+  void load()
+</script>

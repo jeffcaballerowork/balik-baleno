@@ -1,0 +1,88 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro"
+---
+
+<BaseLayout title="Moderation review">
+  <main class="auth-page content-width">
+    <p class="eyebrow"><span class="eyebrow-line"></span> ADMIN</p>
+    <h1>Moderation <em>review.</em></h1>
+    <p id="review-status">Loading hidden and reported notes…</p>
+    <div id="review-list" class="approval-list"></div>
+  </main>
+</BaseLayout>
+
+<script>
+  interface ReviewNote {
+    id: string
+    wall_date: string
+    body: string
+    author_name: string | null
+    created_at: string
+    edited_at: string | null
+    hidden: number
+    report_count: number
+    reaction_count: number
+  }
+  const status = document.querySelector<HTMLElement>("#review-status")
+  const list = document.querySelector<HTMLElement>("#review-list")
+
+  async function csrfToken(): Promise<string> {
+    const response = await fetch("/api/auth/csrf", { credentials: "same-origin" })
+    const body = await response.json() as { token?: string }
+    if (!response.ok || !body.token) throw new Error("Could not prepare the review.")
+    return body.token
+  }
+
+  async function load(): Promise<void> {
+    const response = await fetch("/api/admin/reports", { credentials: "same-origin" })
+    const body = await response.json() as { notes?: ReviewNote[]; error?: { message: string } }
+
+    if (!response.ok || !body.notes) {
+      if (status) status.textContent = body.error?.message ?? "The review queue is unavailable."
+      return
+    }
+
+    if (status) status.textContent = body.notes.length ? "Hidden, reported, and recently edited notes." : "There is nothing waiting for review."
+    if (!list) return
+    list.replaceChildren(...body.notes.map(note => {
+      const article = document.createElement("article")
+      article.className = "approval-card"
+      const name = document.createElement("strong")
+      name.textContent = `${note.hidden === 1 ? "Hidden" : "Visible"} · ${note.wall_date} · ${note.report_count} reports`
+      const text = document.createElement("p")
+      text.textContent = note.body
+      const details = document.createElement("span")
+      details.textContent = `${note.author_name ?? "Anonymous"} · ${note.reaction_count} reactions${note.edited_at ? " · edited" : ""}`
+      article.appendChild(name)
+      article.appendChild(text)
+      article.appendChild(details)
+      for (const action of ["restore", "delete"] as const) {
+        const button = document.createElement("button")
+        button.className = action === "restore" ? "button button-primary" : "button button-outline"
+        button.textContent = action === "restore" ? "Restore" : "Delete"
+        if (action === "restore" && note.hidden !== 1) button.setAttribute("disabled", "")
+        button.addEventListener("click", () => { void review(note.id, action) })
+        article.appendChild(button)
+      }
+      return article
+    }))
+  }
+
+  async function review(id: string, action: "restore" | "delete"): Promise<void> {
+    try {
+      const token = await csrfToken()
+      const response = await fetch(`/api/admin/reports/${encodeURIComponent(id)}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+        body: JSON.stringify({ action }),
+      })
+      if (!response.ok) throw new Error("The review could not be saved.")
+      await load()
+    } catch (error) {
+      if (status) status.textContent = error instanceof Error ? error.message : "The review could not be saved."
+    }
+  }
+
+  void load()
+</script>

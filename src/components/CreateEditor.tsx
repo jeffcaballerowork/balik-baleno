@@ -73,6 +73,30 @@ export default function CreateEditor() {
     setSubmissionMessage("")
 
     try {
+      const me = await fetch("/api/auth/me", { credentials: "same-origin" })
+      const meBody: unknown = await me.json()
+
+      if (
+        !me.ok ||
+        typeof meBody !== "object" ||
+        meBody === null ||
+        !("user" in meBody) ||
+        typeof (meBody as { user: unknown }).user !== "object" ||
+        (meBody as { user: { status?: unknown } | null }).user === null
+      ) {
+        setSubmissionMessage("Please sign in to post your note.")
+        setPinning(false)
+        return
+      }
+
+      const status = (meBody as { user: { status?: unknown } }).user.status
+
+      if (status !== "approved") {
+        setSubmissionMessage("Only approved alumni can post notes yet.")
+        setPinning(false)
+        return
+      }
+
       await createPin({
         kind: template,
         color: template === "sticky" ? "yellow" : null,

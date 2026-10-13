@@ -8,6 +8,8 @@ import {
   logApiError,
 } from "../../lib/api-response"
 
+import { getSessionUser, isAdmin } from "../../lib/auth"
+
 import { getWallPins } from "../../lib/wall-pins"
 
 import {
@@ -50,7 +52,10 @@ export const GET: APIRoute = async ({ url, request }) => {
   }
 
   try {
-    const pins = await getWallPins(parsedDate.data, deviceToken)
+    const viewer = await getSessionUser(request)
+    const pins = await getWallPins(parsedDate.data, deviceToken, viewer?.id ?? null, {
+      isModerator: viewer ? isAdmin(viewer) : false,
+    })
 
     return jsonResponse({
       pins,
