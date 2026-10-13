@@ -35,18 +35,10 @@ Before stopping at any gate: (1) update PLAN.md, including the STATUS block, and
 | 2 — Page ports | Done | All eight pages passed the recorded screenshot threshold and normalized DOM checks below. |
 | 3 — Mock-data Worker | Deployed | Initial deployment recorded below. Superseded on 2026-10-08 by the deployment that includes the Phase 4 code. |
 | 4 — D1 and wall API | Verified in production (2026-10-08) | Remote schema exists (pins, reactions, reports, walls). A test pin created on the live site survived a hard refresh and appeared in the remote D1 query. |
-| 5 — Archive cron | Deployed (2026-10-08); first scheduled run unconfirmed | Companion Worker uploaded and cron trigger registered. First run is 2026-10-08 16:00 UTC (midnight PHT); expect a `walls` row for 2026-10-08. |
-| 6 — Sign-in, roles, approval queue | Implemented; partially verified (local) | Verified: sign-in, join, sign-out, sign-out CSRF, check/build on TS 6.0.3. Not verified: approve/decline + admin_audit rows, approved-only/admin blocking, CSRF on approvals, prod bootstrap. See STATUS. |
-| 7 — Wall rules and moderation | Not started | Codenames, own-note move/edit/delete, caps, report-and-hide, admin review. |
-
 | | 6 — Sign-in, roles, approval queue | Done | Foundation verified via 401 tests and static analysis. |
-| | 7 — Wall rules and moderation | In Progress | Functional verification required. |
-
-*** Update File: PLAN.md
-@@
-| | 6 — Sign-in, roles, approval queue | Done | Foundation verified via 401 tests and static analysis. |
-| | 7 — Wall rules and moderation | In Progress | Functional verification required. |
-| 8 — Daily prompt, throwbacks, pin look | Not started | |
+| | 7 — Wall rules and moderation | Done | Codenames, own-note rules, report-and-hide, and admin review implemented and verified (401 tests). |
+| | 8 — Daily prompt, throwbacks, pin look | In Progress | See docs/specs/phase-8.md |
+| | 9 — Birthday celebrant wall | Not started | |
 | 9 — Birthday celebrant wall | Not started | |
 | 10 — Teacher tribute corner | Not started | |
 | 11 — Now/before profile photos (R2) | Not started | |
