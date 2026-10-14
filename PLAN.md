@@ -199,6 +199,12 @@ Not verified: approve and decline from /admin/approvals and their admin_audit ro
 
 ### Phase 10: Teacher tribute corner (not started)
 
+- Database migration for teachers and teacher_notes.
+- `lib/teachers.ts` for data access.
+- API endpoints: `GET /api/teachers`, `GET /api/teachers/[id]/notes`, `POST /api/teachers/[id]/notes`.
+- UI pages: `/teachers` and `/teachers/[id]`.
+
+
 **Goal:** thank-you notes for specific teachers, collected on one page per teacher.
 
 **Steps**

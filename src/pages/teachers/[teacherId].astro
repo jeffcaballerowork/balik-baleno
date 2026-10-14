@@ -1,0 +1,63 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro"
+import { getTeacherById, getNotesByTeacher } from "../../lib/teachers"
+import { getSessionUser } from "../../lib/auth"
+
+const { teacherId } = Astro.params
+if (!teacherId) return Astro.redirect("/teachers")
+
+const teacher = await getTeacherById(teacherId)
+if (!teacher) return Astro.redirect("/teachers")
+
+const notes = await getNotesByTeacher(teacherId)
+const user = await getSessionUser(Astro.request)
+---
+
+<BaseLayout title={`Thank you, ${teacher.name}`}>
+  <main class="content-width">
+    <h1>Thank you, {teacher.name}</h1>
+    {teacher.subject && <p><em>{teacher.subject}</em></p>}
+    
+    {user ? (
+        <form id="note-form" data-teacher-id={teacher.id}>
+            <textarea id="note-content" placeholder="Write your thank you note here…"></textarea>
+            <button type="submit">Post note</button>
+        </form>
+    ) : (
+        <p>Please <a href="/login">sign in</a> to post a note.</p>
+    )}
+
+    <h2>Notes</h2>
+    <ul>
+        {notes.map(note => (
+            <li>
+                <p>{note.content}</p>
+                <small>- {note.display_name} ({new Date(note.created_at).toLocaleDateString()})</small>
+            </li>
+        ))}
+    </ul>
+  </main>
+</BaseLayout>
+
+<script>
+    const form = document.getElementById("note-form") as HTMLFormElement;
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const teacherId = form.dataset.teacherId;
+            const content = (document.getElementById("note-content") as HTMLTextAreaElement).value;
+            
+            const res = await fetch(`/api/teachers/${teacherId}/notes`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content })
+            });
+
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                alert("Failed to add note.");
+            }
+        });
+    }
+</script>

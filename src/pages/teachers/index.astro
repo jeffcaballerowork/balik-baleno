@@ -1,0 +1,20 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro"
+import { getAllTeachers } from "../../lib/teachers"
+
+const teachers = await getAllTeachers()
+---
+
+<BaseLayout title="Teacher Tribute">
+  <main class="content-width">
+    <h1>Teacher Tribute</h1>
+    <p>Share a thank-you note with your favorite teachers.</p>
+    <ul>
+      {teachers.map(teacher => (
+        <li>
+          <a href={`/teachers/${teacher.id}`}>{teacher.name} {teacher.subject ? `(${teacher.subject})` : ""}</a>
+        </li>
+      ))}
+    </ul>
+  </main>
+</BaseLayout>

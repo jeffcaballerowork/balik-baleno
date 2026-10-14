@@ -6,12 +6,16 @@ interface Celebrant {
   batch_year: number;
 }
 
+interface ApiResponse {
+  celebrants: Celebrant[];
+}
+
 export default function CelebrantStrip() {
   const [celebrants, setCelebrants] = useState<Celebrant[]>([]);
 
   useEffect(() => {
     fetch("/api/celebrants/today")
-      .then((res) => res.json())
+      .then((res) => res.json() as Promise<ApiResponse>)
       .then((data) => {
         if (data.celebrants) {
           setCelebrants(data.celebrants);
