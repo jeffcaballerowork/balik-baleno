@@ -37,6 +37,14 @@ Before stopping at any gate: (1) update PLAN.md, including the STATUS block, and
 | 2 — Page ports | Done | All eight pages passed the recorded screenshot threshold and normalized DOM checks below. |
 | 3 — Mock-data Worker | Deployed | Initial deployment recorded below. Superseded on 2026-10-08 by the deployment that includes the Phase 4 code. |
 | | | 7 — Wall rules, moderation, and Auth Modal | In Progress | Codenames, own-note rules, report-and-hide, admin review (Done); Auth Modal for pinning (In Progress). |
+## Phase 8: Daily prompt, throwbacks, and pin look
+
+- Database migration for prompts (Done).
+- Admin prompt scheduling (`/admin/prompts`) (Done).
+- Wall UI: Fetch and render daily prompt (Done).
+- Wall UI: Implement throwback strip (Done).
+- UI/UX: Implement CSS rotations and physical pin styling (Done).
+
 | | | 8 — Daily prompt, throwbacks, pin look | Not started | Implementation planned (see below). |
 ## Phase 8: Daily prompt, throwbacks, and pin look
 **Goal:** Give people a reason to post each day, and make pins feel physical.
