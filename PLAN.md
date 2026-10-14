@@ -21,6 +21,8 @@ Verified (via static analysis):
  - Phase 7: Moderation endpoints (/api/admin/reports/*)
  - CSRF rejection on /api/admin/approvals/* specifically
 
+ - Auth Modal for pinning: Implement opening of AuthModal in `CreateEditor` for unauthenticated pinning attempts (Done).
+
 
 ## Gate protocol
 
@@ -35,7 +37,17 @@ Before stopping at any gate: (1) update PLAN.md, including the STATUS block, and
 | 2 — Page ports | Done | All eight pages passed the recorded screenshot threshold and normalized DOM checks below. |
 | 3 — Mock-data Worker | Deployed | Initial deployment recorded below. Superseded on 2026-10-08 by the deployment that includes the Phase 4 code. |
 | | | 7 — Wall rules, moderation, and Auth Modal | In Progress | Codenames, own-note rules, report-and-hide, admin review (Done); Auth Modal for pinning (In Progress). |
-| | | 8 — Daily prompt, throwbacks, pin look | Not started | See docs/specs/phase-8.md |
+| | | 8 — Daily prompt, throwbacks, pin look | Not started | Implementation planned (see below). |
+## Phase 8: Daily prompt, throwbacks, and pin look
+**Goal:** Give people a reason to post each day, and make pins feel physical.
+
+**Plan:**
+1. **Database**: Migration 0004 for `prompts` table.
+2. **Admin**: Create `/admin/prompts` to schedule and manage daily prompts.
+3. **Wall UI (Server)**: Fetch current day's prompt or fallback rotation and render.
+4. **Wall UI (Throwbacks)**: Implement "On this day" logic and render the strip.
+5. **Frontend**: Add CSS rotations and pin styling (tape/thumbtacks) to `NoteCard`.
+6. **Verify**: Test prompt scheduling, throwback logic, and visual stability of pin rotations.
 | | | 9 — Birthday celebrant wall | Not started | |
 | | | 10 — Teacher tribute corner | Not started | |
 | | | 11 — Now/before profile photos (R2) | Not started | |

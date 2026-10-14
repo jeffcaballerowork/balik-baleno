@@ -84,6 +84,7 @@ export default function CreateEditor() {
         typeof (meBody as { user: unknown }).user !== "object" ||
         (meBody as { user: { status?: unknown } | null }).user === null
       ) {
+        (window as any).openAuthModal?.()
         setSubmissionMessage("Please sign in to post your note.")
         setPinning(false)
         return
