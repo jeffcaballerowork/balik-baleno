@@ -2,6 +2,8 @@
 import Icon from "./Icon.astro";
 import WallBoard from "./WallBoard";
 import WallCountdown from "./WallCountdown";
+import CelebrantStrip from "./CelebrantStrip";
+
 ---
 
 <div class="wall-page">
@@ -22,6 +24,9 @@ import WallCountdown from "./WallCountdown";
       </button>
     </div>
   </div>
+
+    <CelebrantStrip client:load />
+
   <div class="daily-prompt content-width">
     <span id="daily-prompt-text">Loading prompt...</span>
   </div>

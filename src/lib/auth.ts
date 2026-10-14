@@ -31,6 +31,9 @@ const userSchema = z.object({
   join_note: z.string().nullable(),
   codename: z.string().nullable(),
   codename_updated_at: z.string().nullable(),
+  birth_month: z.number().int().nullable(),
+  birth_day: z.number().int().nullable(),
+  birthday_visible: z.number().int().nullable(),
   created_at: z.string(),
   updated_at: z.string(),
 })
@@ -46,6 +49,9 @@ export type AuthUser = {
   joinNote: string | null
   codename: string | null
   codenameUpdatedAt: string | null
+  birthMonth: number | null
+  birthDay: number | null
+  birthdayVisible: boolean
   createdAt: string
   updatedAt: string
 }
@@ -193,6 +199,9 @@ function toAuthUser(row: UserRow): AuthUser {
     joinNote: row.join_note,
     codename: row.codename,
     codenameUpdatedAt: row.codename_updated_at,
+    birthMonth: row.birth_month,
+    birthDay: row.birth_day,
+    birthdayVisible: row.birthday_visible === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -508,6 +517,9 @@ export function serializeUser(user: AuthUser) {
     status: user.status,
     batchYear: user.batchYear,
     codename: user.codename,
+    birthMonth: user.birthMonth,
+    birthDay: user.birthDay,
+    birthdayVisible: user.birthdayVisible,
   }
 }
 

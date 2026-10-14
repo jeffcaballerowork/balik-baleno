@@ -285,6 +285,16 @@ body,.app-shell{background:#f6f3e9;color:#293047}
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   font-size: 0.9rem;
   border-left: 3px solid #ccc;
+
+.celebrant-strip {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: #fdf6e3;
+  border: 1px solid #eec;
+  border-radius: 8px;
+  text-align: center;
+}
+
 }
 
   z-index: 1;

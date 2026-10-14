@@ -23,6 +23,42 @@ import BaseLayout from "../layouts/BaseLayout.astro"
       <p>3 to 20 characters: letters, numbers, spaces, hyphens, or underscores. Your first codename is free; after that it can be changed once every 7 days. It signs every note you post.</p>
       <button class="button button-primary" type="submit">Save codename</button>
     </form>
+
+    <form id="birthday-form" style="margin-top: 2rem;">
+      <h2>Birthday</h2>
+      <div style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap;">
+        <label>
+          Month
+          <select id="birth-month" name="birthMonth">
+            <option value="">Choose…</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </label>
+        <label>
+          Day
+          <input id="birth-day" name="birthDay" type="number" min="1" max="31" placeholder="DD" />
+        </label>
+        <label>
+          <input id="birthday-visible" name="birthdayVisible" type="checkbox" />
+          Show on wall
+        </label>
+      </div>
+      <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;">
+        Optional. If you share your birthday, we'll show a celebrant note on the wall on your day.
+      </p>
+      <button class="button button-secondary" type="submit" style="margin-top: 1rem;">Save birthday</button>
+    </form>
   </main>
 </BaseLayout>
 
@@ -76,4 +112,53 @@ import BaseLayout from "../layouts/BaseLayout.astro"
   })
 
   void load()
+</script>
+
+<script>
+  interface MeResponse { user?: { codename?: string | null; birth_month?: number | null; birth_day?: number | null; birthday_visible?: boolean | number | null } | null; error?: { message: string } }
+  const birthdayForm = document.querySelector<HTMLFormElement>("#birthday-form")
+  const birthMonth = document.querySelector<HTMLSelectElement>("#birth-month")
+  const birthDay = document.querySelector<HTMLInputElement>("#birth-day")
+  const birthdayVisible = document.querySelector<HTMLInputElement>("#birthday-visible")
+
+  async function loadBirthday(): Promise<void> {
+    const response = await fetch("/api/auth/me", { credentials: "same-origin" })
+    const body = await response.json() as MeResponse
+
+    if (!response.ok || !body.user) return
+
+    if (birthMonth && body.user.birth_month != null) birthMonth.value = String(body.user.birth_month)
+    if (birthDay && body.user.birth_day != null) birthDay.value = String(body.user.birth_day)
+    if (birthdayVisible && body.user.birthday_visible != null) birthdayVisible.checked = body.user.birthday_visible === 1 || body.user.birthday_visible === true
+  }
+
+  birthdayForm?.addEventListener("submit", (event) => {
+    event.preventDefault()
+    void (async () => {
+      try {
+        const response = await fetch("/api/auth/csrf", { credentials: "same-origin" })
+        const body = await response.json() as { token?: string }
+        if (!response.ok || !body.token) throw new Error("Could not prepare the form.")
+        const token = body.token
+
+        const res = await fetch("/api/auth/birthday", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+          body: JSON.stringify({
+            birth_month: birthMonth?.value ? Number(birthMonth.value) : null,
+            birth_day: birthDay?.value ? Number(birthDay.value) : null,
+            birthday_visible: birthdayVisible?.checked ?? false,
+          }),
+        })
+        const data = await res.json() as { ok?: boolean; error?: { message: string } }
+        if (!res.ok || !data.ok) throw new Error(data.error?.message ?? "Could not save birthday.")
+        await loadBirthday()
+      } catch (error) {
+        alert(error instanceof Error ? error.message : "Could not save birthday.")
+      }
+    })()
+  })
+
+  void loadBirthday()
 </script>

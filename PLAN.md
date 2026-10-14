@@ -180,9 +180,10 @@ Not verified: approve and decline from /admin/approvals and their admin_audit ro
 
 **How the owner verifies:** seed a local prompt and local past-year pins, check the strip at the three widths, and confirm a pin keeps its rotation after a hard refresh.
 
-### Phase 9: Birthday celebrant wall (not started)
-
-**Goal:** a built-in reason to come back each day.
+- Database migration for birthday (Done).
+- User profile updates for birthday (Done).
+- API for birthday celebrants (`/api/celebrants/today`) (Done).
+- Wall UI: Birthday celebrant display (Done).
 
 **Steps**
 1. Migration `0005` (additive): `users.birth_month`, `users.birth_day`, `users.birthday_visible` (default off). Store month and day only, never the year.
