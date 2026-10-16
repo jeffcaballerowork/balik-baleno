@@ -11,6 +11,7 @@
     "verify": "astro check && astro build",
     "dev:cron": "wrangler dev --config wrangler.cron.jsonc --test-scheduled --local --port 8788",
     "seed:local": "node --disable-warning=ExperimentalWarning scripts/seed-local.mjs",
+    "test": "node --test \"tests/**/*.test.ts\"",
     "format": "oxfmt"
   },
   "dependencies": {

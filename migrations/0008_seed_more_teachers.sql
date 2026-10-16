@@ -1,0 +1,12 @@
+INSERT INTO teachers (id, name, subject) VALUES (lower(hex(randomblob(16))), 'Ms. Rosa Villanueva', 'Science');
+INSERT INTO teachers (id, name, subject) VALUES (lower(hex(randomblob(16))), 'Mr. Antonio Bautista', 'Chemistry');
+INSERT INTO teachers (id, name, subject) VALUES (lower(hex(randomblob(16))), 'Mrs. Elena Domingo', 'Biology');
+INSERT INTO teachers (id, name, subject) VALUES (lower(hex(randomblob(16))), 'Mr. Ricardo Salazar', 'Filipino');
+INSERT INTO teachers (id, name, subject) VALUES (lower(hex(randomblob(16))), 'Ms. Carmen Ocampo', 'Araling Panlipunan');
+INSERT INTO teachers (id, name, subject) VALUES (lower(hex(randomblob(16))), 'Mr. Gregorio Navarro', 'MAPEH');
+INSERT INTO teachers (id, name, subject) VALUES (lower(hex(randomblob(16))), 'Ms. Teresa Ruiz', 'Computer Science');
+INSERT INTO teachers (id, name, subject) VALUES (lower(hex(randomblob(16))), 'Mr. Benjamin Cruz', 'Mathematics');
+INSERT INTO teachers (id, name, subject) VALUES (lower(hex(randomblob(16))), 'Mrs. Lourdes Fernandez', 'Values Education');
+INSERT INTO teachers (id, name, subject) VALUES (lower(hex(randomblob(16))), 'Mr. Emmanuel Garcia', 'Mathematics');
+INSERT INTO teachers (id, name, subject) VALUES (lower(hex(randomblob(16))), 'Ms. Josefina Lim', 'English');
+INSERT INTO teachers (id, name, subject) VALUES (lower(hex(randomblob(16))), 'Mr. Alfredo Torres', 'Physics');

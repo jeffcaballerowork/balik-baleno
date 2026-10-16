@@ -58,6 +58,7 @@ Before stopping at any gate: (1) update PLAN.md, including the STATUS block, and
 6. **Verify**: Test prompt scheduling, throwback logic, and visual stability of pin rotations.
 | | | 9 — Birthday celebrant wall | Not started | |
 | | | 10 — Teacher tribute corner | Not started | |
+| | | 10.1 — Teacher directory: search, subject filter, pagination | Done | Migration 0008 seeds 15 teachers; `src/lib/teacher-filter.ts` with 13 `node --test` cases; runtime check on `/teachers` confirmed search, subject filter, and 3 pages of 6. |
 | | | 11 — Now/before profile photos (R2) | Not started | |
 | | | 12 — About the author and donation corner | Not started | |
 | 12 — About the author and donation corner | Not started | |
@@ -217,6 +218,22 @@ Not verified: approve and decline from /admin/approvals and their admin_audit ro
 **Definition of done:** a signed-in alum posts a tribute, an admin approves it, and it appears on that teacher's page; unapproved tributes never appear in public responses.
 
 **How the owner verifies:** post a tribute with a test account, confirm it is invisible until approved, approve, confirm it appears; check at the three widths.
+
+### Phase 10.1: Teacher directory — search, subject filter, and pagination (done)
+
+**Goal:** make the `/teachers` directory usable as it grows: type-ahead search, a subject filter, and paginated results.
+
+**Steps**
+1. `src/lib/teacher-filter.ts` (new): pure helpers `listSubjects`, `filterTeachers`, `paginate`, and `TEACHER_PAGE_SIZE`, unit-tested with the built-in `node --test` runner (`tests/teacher-filter.test.ts`). No new dependencies.
+2. Migration `0008_seed_more_teachers.sql` (additive): seed additional teachers across several subjects so the filter and pagination can be exercised locally.
+3. `/teachers` UI: a search input, a subject `<select>` whose options are rendered on the server from the data, and client-side pagination controls. Cards keep their existing layout; searching, filtering, and paging only toggle visibility.
+4. Verify: `pnpm verify` (0 errors) and a local check of search, filter, and paging at 390x844, 768x1024, and 1440x900.
+
+**Definition of done:** on `/teachers`, typing narrows the list by name or subject, choosing a subject filters to that subject, and the pagination controls page through the results; the page still renders the full list without JavaScript.
+
+**How the owner verifies:** search for part of a teacher name, pick a subject, and page through the results on the running site.
+
+**Verified (2026-10-17):** `pnpm verify` → 0 errors, 0 warnings, 9 hints (all pre-existing). `pnpm test` → 13/13. Runtime on `/teachers` (dev): 15 cards, 6 per page across 3 pages; search "math" → the 3 Mathematics teachers; subject "Physics" → 2; an unmatched query shows the empty state and hides the pager; no console errors.
 
 ### Phase 11: Now-versus-before profile photos (not started)
 
