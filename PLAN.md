@@ -241,7 +241,7 @@ Not verified: approve and decline from /admin/approvals and their admin_audit ro
 
 **Steps**
 1. Create the R2 bucket and binding with the owner's approval (a production change). Keep the bucket private and serve images through a Worker route.
-2. Migration `0007` (additive): `users.photo_now_key`, `users.photo_before_key`, `users.photo_before_visible` (default off), and alt-text fields.
+2. Migration `0009` (additive): `users.photo_now_key`, `users.photo_before_key`, `users.photo_before_visible` (default off), and alt-text fields.
 3. Upload endpoint: validate type (JPEG, PNG, WebP) and size, resize on the client before upload, and store under random keys. Deleting a photo deletes the object.
 4. A profile page and the hover/tap interaction: hover on pointer devices; tap-to-toggle on touch devices (hover does not exist on phones). Respect reduced-motion.
 5. Only approved alumni have public profiles. The high school photo is opt-in.
@@ -251,21 +251,35 @@ Not verified: approve and decline from /admin/approvals and their admin_audit ro
 
 **How the owner verifies:** upload test photos locally, check the toggle with a real phone or device emulation, and confirm the API response for an opted-out user lacks the high school photo key.
 
-### Phase 12: About the author and donation corner (not started)
+### Phase 12: About the author and the support/donation pages (in progress)
 
-**Goal:** a transparent way to cover the site's running costs.
+**Goal:** an author page, and a separate page that shows the site's running costs and lets alumni contribute.
+
+**Decisions (owner, 2026-10-17):**
+- Two pages, linked: `/about` and `/donate`.
+- Entry points: footer only. The header nav stays at six items.
+- Payment methods: GCash, Maribank, GoTyme, and bank transfer — each its own QR code with the account name beside it.
+- Migration number is `0010` (0007 and 0008 are the teacher seeds; Phase 11 takes `0009`).
 
 **Steps**
-1. Static assets for the owner's QR codes (GCash, Maya, a bank) with the account name shown beside each; each in its own tab or card. **Input needed from the owner:** QR images and account names. Decision needed: GCash only, or also PayPal/Ko-fi for alumni abroad.
-2. Migration `0008`: `donation_goals` (month, goal amount, label) and `donations` (id, display name, amount in centavos, donated_at, reference number, public flag default off, message, status `pending|approved|rejected`, user_id nullable). Never store payment account numbers or receipt images.
-3. Page `/donate`: start with an honest short story of what the site costs, then the QR codes, then the monthly progress bar (admin sets the goal and the label), then the opt-in supporters list (tiers, never amounts).
-4. "I donated" form with name or codename, amount, reference number, "show my name publicly" (off by default), and an optional message. Anonymous donations count toward the progress bar.
-5. Admin approval screen: match the reference number to the wallet, approve or reject. Approval updates the progress bar and supporters list; cosmetic badges are Phase "Badges" later.
-6. Link the tribute prompt (Phase 10) to this page.
+1. `/about` (static): the author's story and connection to Baleno, why the site exists, and a short "what this costs" block linking to `/donate`. The independence disclaimer lives in the footer only, so it is not repeated in the page body. **Owner input (2026-10-17):** Jeffrey Caballero, Batch 2011; story drafted for review (Freedom Wall of our years, a place to belong); photo is a now/before placeholder with a hover swap; social links are placeholders. **Status: built.**
+2. `/donate` (rendered on demand): the costs story, four QR codes (GCash, Maribank, GoTyme, bank transfer) with account names, a monthly progress bar, the opt-in supporters list (tiers, never amounts), and the "I donated" form. **Owner input:** QR images, account names and the monthly goal are placeholders for now. **Status: page built with placeholders; the progress bar, the supporters list and the "I donated" form wait on steps 3-5.**
+3. Migration `0010` (additive): `donation_goals` (month, goal amount in centavos, label) and `donations` (id, display name, amount in centavos, reference number, public flag default off, message, status `pending|approved|rejected`, user_id nullable, created_at). Never store payment account numbers or receipt images.
+4. API, test-first for the D1 queries and validation: `POST /api/donations` (submit; auth optional), `GET /api/donations/summary` (progress + approved public supporters), `POST /api/admin/donations/[id]` (approve/reject, writes `admin_audit`).
+5. Admin screen at `/admin/donations`: match the reference number to the wallet, then approve or reject.
+6. Footer: add "About the author" and "Support the site" to the EXPLORE group. Link the Phase 10 tribute prompt to `/donate`.
 
-**Definition of done:** a test donation goes from the form to pending to approved, the progress bar updates, anonymous donors never appear by name, and amounts never appear publicly.
+**Definition of done:** a test donation goes form → pending → approved, the progress bar updates, anonymous donors never appear by name, amounts never appear publicly, and an opted-out donor is absent from the public API.
 
 **How the owner verifies:** submit two test donations (one public, one anonymous), approve both, and confirm the public pages and API responses reveal only what the donor allowed.
+
+**Order:** `/about` first (no external inputs), then `/donate` once the QR images and goal are supplied.
+
+**Progress (2026-10-17, uncommitted):**
+- Both pages exist: `/about` and `/donate`, footer-only entry points ("About the author", "Support the site" in the EXPLORE group). Header nav is unchanged at six items.
+- Everything that awaits real content is marked on the page as a placeholder, so nothing reads as a promise: the author photo, the social links, the cost figures, the four QR codes, the account names, the monthly goal and the supporters list.
+- Verified: `pnpm verify` clean; both routes 200; the author photo swap works on hover and on keyboard focus; four QR cards render (GCash, Maribank, GoTyme, bank transfer).
+- Not built yet: migration `0010`, the three APIs, `/admin/donations`, the "I donated" form, and the Phase 10 tribute prompt link. The donation page is usable for scanning and sending today; only the progress bar, the supporters list and the form wait on the backend.
 
 ### Deferred / not in this task
 
@@ -282,7 +296,7 @@ Not verified: approve and decline from /admin/approvals and their admin_audit ro
 Phase 7 moderation decisions DECIDED (owner, 2026-10-11): codename first set free, then 1 change per 7 days; use a separate `hidden` INTEGER column on pins (do not extend status); admin reposition is current wall date only while hidden/archived review is a separate read-only admin list.
 6. How the first `super_admin` is created. (Proposal: the owner runs a one-time D1 command.)
 7. Who supplies the first teacher list for Phase 10?
-8. Donation methods: GCash only, or add PayPal/Ko-fi?
+8. Donation methods: GCash only, or add PayPal/Ko-fi? DECIDED (owner, 2026-10-17): GCash, Maribank, GoTyme and bank transfer, each with its own QR code.
 9. Do wall photo notes ship with Phase 11 or later?
 10. February 29 birthdays in non-leap years. (Proposal: show on February 28.)
 11. Should the donation corner move ahead of Phases 10 and 11?

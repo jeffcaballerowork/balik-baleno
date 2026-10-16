@@ -313,3 +313,28 @@ body,.app-shell{background:#f6f3e9;color:#293047}
   .brand-text small{font-size:6px}
   .wall-viewport{height:calc(100svh - 156px);min-height:360px}
 }
+
+/* About the author and support pages */
+.about-layout{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:52px;align-items:start}
+.author-photo{margin:0}
+.author-photo-frame{position:relative;width:100%;aspect-ratio:4/5;background:#eaeadd;border:1px solid #dfdbce;overflow:hidden}
+.author-photo-layer{position:absolute;inset:0;display:grid;place-items:center;font-size:10px;font-weight:700;letter-spacing:.19em;color:#6b7385;transition:opacity .25s ease}
+.author-photo-before{opacity:0;background:#dfdbce;color:#a7513c}
+.author-photo:hover .author-photo-now,.author-photo:focus-within .author-photo-now{opacity:0}
+.author-photo:hover .author-photo-before,.author-photo:focus-within .author-photo-before{opacity:1}
+.author-photo:focus-visible{outline:2px solid #a7513c;outline-offset:3px}
+.author-photo figcaption{margin-top:13px;font-size:12px;line-height:1.6;color:#6b7385}
+.about-copy h2{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(26px,2.4vw,33px);letter-spacing:-.04em;margin:38px 0 10px}
+.about-copy p{font-size:14px;line-height:1.85;color:#3e4268;margin:0 0 18px;max-width:62ch}
+.donate-section{margin-top:46px}
+.donate-section h2{font-family:'Fraunces',serif;font-weight:500;font-size:clamp(26px,2.4vw,33px);letter-spacing:-.04em;margin:0 0 12px}
+.donate-section p{font-size:14px;line-height:1.85;color:#3e4268;max-width:62ch;margin:0 0 18px}
+p.donate-placeholder{border:1px dashed #c3cbe0;background:#f2efdf;color:#6b7385;font-size:12px;line-height:1.7;padding:18px;max-width:62ch}
+.donate-qr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px}
+.donate-qr{border:1px solid #e5dfd1;background:#fff;padding:18px;text-align:center}
+.donate-qr-box{aspect-ratio:1;display:grid;place-items:center;border:1px dashed #c3cbe0;background:#f6f3e9;color:#6b7385;font-size:10px;font-weight:700;letter-spacing:.12em;margin-bottom:14px}
+.donate-qr strong{display:block;font-size:13px;color:#1b1a5f}
+.donate-qr span{display:block;margin-top:5px;font-size:11px;color:#6b7385}
+.donate-more{margin:46px 0 0}
+@media(max-width:760px){.about-layout{grid-template-columns:1fr;gap:34px}}
+@media(prefers-reduced-motion:reduce){.author-photo-layer{transition:none}}
