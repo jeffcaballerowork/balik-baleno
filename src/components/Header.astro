@@ -1,6 +1,7 @@
 ---
 import Icon from "./Icon.astro";
 import Logo from "./Logo.astro";
+import UserMenu from "./UserMenu";
 
 interface Props {
   activePath: string;
@@ -9,6 +10,7 @@ interface Props {
 const { activePath } = Astro.props;
 const navItems = [
   { label: "The Wall", path: "/wall" },
+  { label: "Teachers", path: "/teachers" },
   { label: "News", path: "/news" },
   { label: "Events", path: "/events" },
   { label: "Batches", path: "/batches" },
@@ -19,7 +21,7 @@ const sessionCookie = Astro.cookies.get("balik_session");
 const isSignedIn = !!sessionCookie;
 ---
 
-<header class="site-header">
+<header class="site-header" data-session-present={isSignedIn ? "true" : "false"}>
   <div class="header-inner content-width">
     <Logo />
     <nav class="" aria-label="Main navigation">
@@ -33,17 +35,21 @@ const isSignedIn = !!sessionCookie;
           </button>
         ))
       }
-      <button class="mobile-join" data-nav="/create">
+      {isSignedIn && <button class="mobile-account" data-nav="/profile">Profile</button>}
+      {isSignedIn && (
+        <button class="mobile-account mobile-signout" data-signout>
+          Sign out
+        </button>
+      )}
+      <button class="mobile-join" data-nav="/join">
         Join the room <Icon name="arrow" size={17} />
       </button>
     </nav>
-    <button class="header-join" data-nav="/create">
+    <button class="header-join" data-nav="/join">
       Join the room <Icon name="arrow" size={16} />
     </button>
     {isSignedIn && (
-      <button class="header-join" id="signout-button">
-        Sign out <Icon name="close" size={16} />
-    </button>
+      <UserMenu className="header-user-menu" client:load />
     )}
     <button class="menu-toggle" aria-label="Open menu">
       <Icon name="menu" size={25} />
@@ -53,6 +59,7 @@ const isSignedIn = !!sessionCookie;
 
 <script>
   import { iconPaths } from "./icon-paths";
+  import { signOut } from "../lib/auth-client";
 
   const header = document.querySelector<HTMLElement>(".site-header");
   const navigation = header?.querySelector<HTMLElement>("nav");
@@ -66,24 +73,23 @@ const isSignedIn = !!sessionCookie;
     button.addEventListener("click", () => {
       const destination = button.dataset.nav;
       if (!destination) return;
-      if (destination === "/create") {
-        fetch("/api/auth/me")
-          .then(res => res.json())
-          .then(data => {
-            if ((data as any).user) {
-              window.location.assign(destination);
-            } else {
-              (window as any).openAuthModal();
-            }
-          })
-          .catch(() => {
-            window.location.assign(destination);
-          });
+      if (destination === "/create" || destination === "/join") {
+        if (header?.dataset.sessionPresent === "true") {
+          window.location.assign(destination);
+        } else {
+          (window as any).openAuthModal();
+        }
       } else {
         window.location.assign(destination);
       }
     });
   }
+
+  const signOutButton = header?.querySelector<HTMLButtonElement>("[data-signout]");
+
+  signOutButton?.addEventListener("click", async () => {
+    if (await signOut()) window.location.reload();
+  });
 
   menuToggle?.addEventListener("click", () => {
     menuOpen = !menuOpen;
@@ -107,25 +113,4 @@ const isSignedIn = !!sessionCookie;
     },
     { passive: true },
   );
-    document.getElementById('signout-button')?.addEventListener('click', async () => {
-    try {
-      const csrfRes = await fetch('/api/auth/csrf', { credentials: 'same-origin' });
-      const csrfData = (await csrfRes.json()) as { token?: string };
-      if (!csrfData.token) {
-        console.error('Failed to obtain CSRF token');
-        return;
-      }
-      await fetch('/api/auth/signout', {
-        method: 'POST',
-        headers: {
-          'X-CSRF-Token': csrfData.token,
-        },
-        credentials: 'same-origin',
-      });
-    } catch (e) {
-      console.error('Sign out failed', e);
-    }
-    window.location.reload();
-  });
 </script>
-
