@@ -257,7 +257,8 @@ Not verified: approve and decline from /admin/approvals and their admin_audit ro
 
 **Decisions (owner, 2026-10-17):**
 - Two pages, linked: `/about` and `/donate`.
-- Entry points: footer only. The header nav stays at six items.
+- Entry points: `/about` is footer-only; `/donate` also takes the header slot. The header swaps `Archive` out for `Support the site` and stays at six items — `Archive` keeps its other entries, on the wall ("Explore past walls") and in the footer.
+- Between 760px and 860px the header shows the compact bar with the drawer nav: the inline bar needs ~845px to keep `Support the site` on one line, and it already wrapped at 760-789px with `Archive`.
 - Payment methods: GCash, Maribank, GoTyme, and bank transfer — each its own QR code with the account name beside it.
 - Migration number is `0010` (0007 and 0008 are the teacher seeds; Phase 11 takes `0009`).
 
@@ -267,7 +268,7 @@ Not verified: approve and decline from /admin/approvals and their admin_audit ro
 3. Migration `0010` (additive): `donation_goals` (month, goal amount in centavos, label) and `donations` (id, display name, amount in centavos, reference number, public flag default off, message, status `pending|approved|rejected`, user_id nullable, created_at). Never store payment account numbers or receipt images.
 4. API, test-first for the D1 queries and validation: `POST /api/donations` (submit; auth optional), `GET /api/donations/summary` (progress + approved public supporters), `POST /api/admin/donations/[id]` (approve/reject, writes `admin_audit`).
 5. Admin screen at `/admin/donations`: match the reference number to the wallet, then approve or reject.
-6. Footer: add "About the author" and "Support the site" to the EXPLORE group. Link the Phase 10 tribute prompt to `/donate`.
+6. Footer: add "About the author" and "Support the site" to the EXPLORE group. Header: swap `Archive` for `Support the site`. Link the Phase 10 tribute prompt to `/donate`. **The footer links and the header swap are done; the tribute-prompt link waits on the backend.**
 
 **Definition of done:** a test donation goes form → pending → approved, the progress bar updates, anonymous donors never appear by name, amounts never appear publicly, and an opted-out donor is absent from the public API.
 
@@ -276,9 +277,10 @@ Not verified: approve and decline from /admin/approvals and their admin_audit ro
 **Order:** `/about` first (no external inputs), then `/donate` once the QR images and goal are supplied.
 
 **Progress (2026-10-17, uncommitted):**
-- Both pages exist: `/about` and `/donate`, footer-only entry points ("About the author", "Support the site" in the EXPLORE group). Header nav is unchanged at six items.
+- Both pages exist: `/about` (footer-only) and `/donate` ("Support the site" in the footer EXPLORE group and in the header, which stays at six items).
 - Everything that awaits real content is marked on the page as a placeholder, so nothing reads as a promise: the author photo, the social links, the cost figures, the four QR codes, the account names, the monthly goal and the supporters list.
 - Verified: `pnpm verify` clean; both routes 200; the author photo swap works on hover and on keyboard focus; four QR cards render (GCash, Maribank, GoTyme, bank transfer).
+- Header (owner decision, 2026-10-17): `Archive` leaves the nav for `Support the site`; the header's compact-bar and drawer rules moved from the 760px block to a new 860px block so the inline bar never wraps. Checked at 800px: compact bar, drawer opens with all six labels on one line, no page overflow.
 - Not built yet: migration `0010`, the three APIs, `/admin/donations`, the "I donated" form, and the Phase 10 tribute prompt link. The donation page is usable for scanning and sending today; only the progress bar, the supporters list and the form wait on the backend.
 
 ### Deferred / not in this task
