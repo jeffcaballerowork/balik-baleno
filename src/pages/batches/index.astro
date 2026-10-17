@@ -1,6 +1,15 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import BatchesPage from "../../components/BatchesPage.astro";
+import { getSessionUser, isApproved } from "../../lib/auth";
+
+export const prerender = false;
+
+const viewer = await getSessionUser(Astro.request);
+
+if (!viewer || !isApproved(viewer)) {
+  return Astro.redirect(`/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+}
 ---
 
 <BaseLayout title="Batches">

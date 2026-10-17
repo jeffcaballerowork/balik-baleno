@@ -1,10 +1,10 @@
 ---
 import Icon from "./Icon.astro";
+import { listBatchYears } from "../lib/batch-db";
 
-const years = Array.from({ length: 30 }, (_, index) => ({
-  year: 2025 - index,
-  classmates: 34 + (index * 13) % 51,
-}));
+// Real years with real counts. A year only appears once somebody from it is
+// listed, so this page cannot advertise a batch that opens onto nothing.
+const years = await listBatchYears();
 ---
 
 <main class="listing-page content-width">
@@ -15,17 +15,30 @@ const years = Array.from({ length: 30 }, (_, index) => ({
       Different years, same place in our hearts. Find your people and pick up where you left off.
     </p>
   </div>
-  <div class="batches-grid">
-    {
-      years.map(({ year, classmates }) => (
-        <button data-nav={`/batches/${year}`}>
-          <span>CLASS OF</span>
-          <strong>{year}</strong>
-          <span>
-            {classmates} classmates <Icon name="arrow" size={16} />
-          </span>
-        </button>
-      ))
-    }
-  </div>
+  {
+    years.length === 0 ? (
+      <p class="batches-empty">
+        No batches have anyone listed yet. Set your batch year on your own profile and yours shows up
+        here.
+      </p>
+    ) : (
+      <div class="batches-grid">
+        {years.map(({ year, count }) => (
+          <button data-nav={`/batches/${year}`}>
+            <span>CLASS OF</span>
+            <strong>{year}</strong>
+            <span>
+              {count} {count === 1 ? "classmate" : "classmates"} <Icon name="arrow" size={16} />
+            </span>
+          </button>
+        ))}
+      </div>
+    )
+  }
 </main>
+
+<style>
+  .batches-empty {
+    color: #6b625a;
+  }
+</style>

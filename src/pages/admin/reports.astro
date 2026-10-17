@@ -8,6 +8,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro"
     <h1>Moderation <em>review.</em></h1>
     <p id="review-status">Loading hidden and reported notes…</p>
     <div id="review-list" class="approval-list"></div>
+    <h2>Profile reports</h2>
+    <p id="profile-report-status">Loading profile reports…</p>
+    <div id="profile-report-list" class="approval-list"></div>
   </main>
 </BaseLayout>
 
@@ -23,8 +26,19 @@ import BaseLayout from "../../layouts/BaseLayout.astro"
     report_count: number
     reaction_count: number
   }
+  interface ProfileReport {
+    id: string
+    reporter_name: string
+    target_name: string
+    target_id: string
+    note: string | null
+    created_at: string
+  }
+
   const status = document.querySelector<HTMLElement>("#review-status")
   const list = document.querySelector<HTMLElement>("#review-list")
+  const profileStatus = document.querySelector<HTMLElement>("#profile-report-status")
+  const profileList = document.querySelector<HTMLElement>("#profile-report-list")
 
   async function csrfToken(): Promise<string> {
     const response = await fetch("/api/auth/csrf", { credentials: "same-origin" })
@@ -84,5 +98,69 @@ import BaseLayout from "../../layouts/BaseLayout.astro"
     }
   }
 
+  async function loadProfileReports(): Promise<void> {
+    const response = await fetch("/api/admin/profile-reports", { credentials: "same-origin" })
+    const body = await response.json() as { reports?: ProfileReport[]; error?: { message: string } }
+
+    if (!response.ok || !body.reports) {
+      if (profileStatus) profileStatus.textContent = body.error?.message ?? "The profile reports are unavailable."
+      return
+    }
+
+    if (profileStatus) {
+      profileStatus.textContent = body.reports.length
+        ? "Reports on profiles. The remedy is to ask the member or suspend the account."
+        : "Nobody has reported a profile."
+    }
+
+    if (!profileList) return
+
+    profileList.replaceChildren(...body.reports.map(report => {
+      const article = document.createElement("article")
+      article.className = "approval-card"
+
+      const name = document.createElement("strong")
+      name.textContent = `${report.reporter_name} reported ${report.target_name} · ${report.created_at.slice(0, 10)}`
+
+      const target = document.createElement("a")
+      target.href = `/alumni/${report.target_id}`
+      target.textContent = "Open the profile"
+
+      const note = document.createElement("p")
+      note.textContent = report.note ?? "No note was left."
+
+      const close = document.createElement("button")
+      close.className = "button button-outline"
+      close.textContent = "Close report"
+      close.addEventListener("click", () => { void closeReport(report.id) })
+
+      article.appendChild(name)
+      article.appendChild(target)
+      article.appendChild(note)
+      article.appendChild(close)
+
+      return article
+    }))
+  }
+
+  async function closeReport(id: string): Promise<void> {
+    try {
+      const token = await csrfToken()
+      const response = await fetch(`/api/admin/profile-reports/${encodeURIComponent(id)}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+        body: JSON.stringify({ action: "close" }),
+      })
+
+      if (!response.ok) throw new Error("The report could not be closed.")
+
+      await loadProfileReports()
+    } catch (error) {
+      if (profileStatus) profileStatus.textContent = error instanceof Error ? error.message : "The report could not be closed."
+    }
+  }
+
   void load()
+  void loadProfileReports()
 </script>

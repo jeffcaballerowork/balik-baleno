@@ -59,9 +59,10 @@ Before stopping at any gate: (1) update PLAN.md, including the STATUS block, and
 | | | 9 — Birthday celebrant wall | Not started | |
 | | | 10 — Teacher tribute corner | Not started | |
 | | | 10.1 — Teacher directory: search, subject filter, pagination | Done | Migration 0008 seeds 15 teachers; `src/lib/teacher-filter.ts` with 13 `node --test` cases; runtime check on `/teachers` confirmed search, subject filter, and 3 pages of 6. |
-| | | 11 — Now/before profile photos (R2) | Not started | |
-| | | 12 — About the author and donation corner | Not started | |
-| 12 — About the author and donation corner | Not started | |
+| | | 11 — Now/before profile photos (R2) | Merged into 13 | Folded into Phase 13 on 2026-10-17. Migration `0009` stays reserved for it. The one non-code step is done: the R2 bucket exists and is bound. |
+| | | 12 — About the author and donation corner | Pages shipped | `/about` and `/donate` committed at `c80a521`. Migration `0010`, the donation APIs, `/admin/donations` and the "I donated" form wait on owner inputs. |
+| | | 13 — Alumni profiles, photos, and the batch directory | Built; signed-in walkthrough pending | 13.1–13.6 built and verified locally: migration `0009` (local D1 only), the profile editor and R2 photo pipeline, `/alumni/[id]`, the real batch directory with real counts, the interest catalogue with an admin suggestion queue, and profile reporting. `pnpm test` 65/65; `pnpm verify` 0 errors, 0 warnings. Awaiting the owner: the signed-in walkthrough and new baselines (there is no capture harness in the repo). Nothing committed. |
+| | | 14 — Teacher pool admin and card images | Planned | Spec `docs/specs/profile.md` (teacher section). Independent of 13 and can run before it. |
 
 Where a phase section below disagrees with this table or with the Production checklist, this table and the checklist win. The phase sections for Phases 0 to 5 are a historical record written at the time and are not rewritten.
 
@@ -97,7 +98,7 @@ Remaining production actions for Phases 0 to 5: confirm the first archive run, a
 - **Secrets:** `OWNER_HASH_SALT` is configured locally and declared required for deployment; the production secret must be set securely before deploying write endpoints.
 
 
-## Tier 1 development plan (Phases 6 to 12)
+## Tier 1 development plan (Phases 6 to 14)
 
 Source of the feature list: the Feature Tier List (Tier 1). Edit and delete of your own notes was added to Tier 1 on 2026-10-08 and lives in Phase 7. Everything below is **not started**.
 
@@ -124,6 +125,12 @@ Source of the feature list: the Feature Tier List (Tier 1). Edit and delete of y
 | 2026-10-08 | Open questions not explicitly answered by the owner use the proposed defaults in this plan. | Decided (owner) |
 | 2026-10-08 | Phase 6 uses server-side Google OpenID Connect authorization-code flow with PKCE and verified ID tokens; D1 holds opaque session records and signed `HttpOnly`, `Secure`, `SameSite=Lax` cookies carry only the session reference. This keeps Google tokens out of browser storage, works with `session: false`, and allows server-side revocation. | Decided (implementation) |
 | 2026-10-08 | Phases 6 to 12 run in the order listed (donation corner last; it may move earlier if the owner prefers income sooner). | Proposed, needs owner confirmation |
+| 2026-10-17 | Profiles, batch member lists and profile photos are visible to signed-in, approved alumni only. Batch pages stop being prerendered and show real, approved members and real counts. | Decided (owner) |
+| 2026-10-17 | The codename never appears on a profile; wall notes never link to a profile; batch pages are the only way in, for now. | Decided (owner) |
+| 2026-10-17 | The direction is hanging out, not matchmaking: interests from a shared catalogue, a coarse hand-typed `based_in` shown only when it is filled in, `open to meetups` off by default, and the Singles corner dropped. | Decided (owner) |
+| 2026-10-17 | Photos are downscaled in the browser and stored in R2 (`balik-baleno-media`, binding `MEDIA`) with no server-side image processing; images are served through a Worker route with private caching. | Decided (implementation) |
+| 2026-10-17 | Profile moderation ships as option B: an account-based "report this profile" that lists in the existing `/admin/reports`, with no per-photo tool and no auto-hide by report count. | Decided (owner) |
+| 2026-10-17 | Teacher accounts, claiming and onboarding are deferred. The owner curates the teacher pool and the teacher card images in the app (Phase 14). The account name is editable and stops being overwritten by Google sign-in. | Decided (owner) |
 
 ### Phase 6: Sign-in, roles, and approval queue (implemented; partially verified locally)
 
@@ -235,21 +242,9 @@ Not verified: approve and decline from /admin/approvals and their admin_audit ro
 
 **Verified (2026-10-17):** `pnpm verify` → 0 errors, 0 warnings, 9 hints (all pre-existing). `pnpm test` → 13/13. Runtime on `/teachers` (dev): 15 cards, 6 per page across 3 pages; search "math" → the 3 Mathematics teachers; subject "Physics" → 2; an unmatched query shows the empty state and hides the pager; no console errors.
 
-### Phase 11: Now-versus-before profile photos (not started)
+### Phase 11: Now-versus-before profile photos (merged into Phase 13)
 
-**Goal:** a profile shows the current photo and switches to the high school photo on hover. This is also where R2 first becomes necessary.
-
-**Steps**
-1. Create the R2 bucket and binding with the owner's approval (a production change). Keep the bucket private and serve images through a Worker route.
-2. Migration `0009` (additive): `users.photo_now_key`, `users.photo_before_key`, `users.photo_before_visible` (default off), and alt-text fields.
-3. Upload endpoint: validate type (JPEG, PNG, WebP) and size, resize on the client before upload, and store under random keys. Deleting a photo deletes the object.
-4. A profile page and the hover/tap interaction: hover on pointer devices; tap-to-toggle on touch devices (hover does not exist on phones). Respect reduced-motion.
-5. Only approved alumni have public profiles. The high school photo is opt-in.
-6. Decision to record: whether wall photo notes (currently HTTP 501) use the same pipeline in this phase or a later one.
-
-**Definition of done:** an approved alum uploads two photos, the toggle works on desktop and phone, an opted-out high school photo is never returned by the API, and deleting a photo removes the R2 object.
-
-**How the owner verifies:** upload test photos locally, check the toggle with a real phone or device emulation, and confirm the API response for an opted-out user lacks the high school photo key.
+Folded into Phase 13 on 2026-10-17. It was always the first slice of the profile, and building it alone would have meant writing the photo pipeline twice. Migration `0009` stays reserved for the profile work. The one step that was not code is already done: the R2 bucket `balik-baleno-media` exists in the account and is bound as `MEDIA` in `wrangler.jsonc`, with types regenerated and `pnpm verify` clean. The old step list is superseded by Phase 13.1–13.6; nothing from it is dropped — keep the private bucket, the Worker-served images, the client-side resize, the opt-in high-school photo, and the reduced-motion-aware hover/tap.
 
 ### Phase 12: About the author and the support/donation pages (in progress)
 
@@ -283,10 +278,151 @@ Not verified: approve and decline from /admin/approvals and their admin_audit ro
 - Header (owner decision, 2026-10-17): `Archive` leaves the nav for `Support the site`; the header's compact-bar and drawer rules moved from the 760px block to a new 860px block so the inline bar never wraps. Checked at 800px: compact bar, drawer opens with all six labels on one line, no page overflow.
 - Not built yet: migration `0010`, the three APIs, `/admin/donations`, the "I donated" form, and the Phase 10 tribute prompt link. The donation page is usable for scanning and sending today; only the progress bar, the supporters list and the form wait on the backend.
 
+### Phase 13: Alumni profiles, photos, and the batch directory (planned)
+
+**Spec:** `docs/specs/profile.md`. Read it alongside this plan — the plan argues from it, and it holds the decisions, the field list, the starter interest catalogue and the reporting option that was chosen.
+
+**Goal:** an approved alum gets a page — face, cover, a few words, batch, where they are based, interests, and up to six gallery prints — and the batch pages stop showing mock names and become the only way in.
+
+**Owner decisions (2026-10-17):** layout A; the high-school photo flips on hover/tap and is opt-in; the gallery is capped at six and owns the taped-print look; interests come from a shared catalogue with an admin-approved suggestion queue; the direction is hanging out, not matchmaking; the codename never appears on a profile; wall notes never link to a profile; profiles and batch lists are for signed-in, approved alumni only; reporting is option B; teachers wait for Phase 14.
+
+**Rules for this phase:** the standing rules at the top of this plan apply, plus — migration `0009_profile.sql` only, with `0010` still reserved for Phase 12 donations and nothing applied to remote D1 without approval; photos downscale in the browser because there is no image-processing binding; `pnpm verify` clean (0 errors, the 9 known hints stay as they are); a new recorded baseline for every page whose look changes on purpose.
+
+**Review focus** — inputs the spec implies that the tests below do not pin. Each line's test goes in the task that owns the code.
+1. A brand-new profile with every field empty renders a page rather than an error, and shows no empty labels.
+2. A photo that is too large, the wrong type, or not an image at all is rejected before any R2 object is written.
+3. A signed-out or pending visitor gets nothing from `/alumni/[id]` or `/media/<key>` — no data, no bytes.
+4. Replacing a photo deletes the object it replaced, so no orphans accumulate.
+5. An account that hides itself leaves the grid *and* the counts.
+
+#### 13.1 Profile data, visibility rules, and the own editor
+
+**Files:** create `migrations/0009_profile.sql`, `src/lib/profile.ts`, `tests/profile.test.ts`; modify `src/lib/auth.ts`, `src/config.ts`, `src/pages/profile.astro`.
+
+**Interfaces:**
+- `toProfileView(row: ProfileRow, viewer: { isOwner: boolean }): ProfileView` — pure; it is where every visibility rule lives.
+- `getOwnProfile(userId)`, `getProfileForViewer(targetId)`, `updateProfile(userId, fields)`.
+- `PROFILE_CONFIG` in `src/config.ts`: `{ maxInterests: 10, maxGalleryPhotos: 6, maxCaptionLength: 80, maxBioLength: 400, maxBasedInLength: 60, maxPhotoBytes: 2_000_000 }`.
+
+**Steps**
+1. Migration `0009` (additive): the `users` columns, `user_photos`, `user_interests`, `interests` plus the catalogue seed, `interest_suggestions`, `profile_reports`, and the `teachers` columns — all as listed in the spec. Add `profile_audit` as a **new** table (`teacher_created`, `teacher_updated`, `teacher_deactivated`, `interest_approved`, `interest_declined`, `profile_report_closed`, `photo_removed`) rather than rebuilding `admin_audit`, whose CHECK is approval-only; that is the reasoning `0003` used for `moderation_audit`.
+2. Failing tests first in `tests/profile.test.ts` for `toProfileView`: a hidden birth year while day and month still show; a hidden marital status; a blank `based_in` returning null; `avatar_then_visible = 0` returning no high-school photo; `open_to_meetups = 0` returning false.
+3. Implement `profile.ts` and `PROFILE_CONFIG`; make the tests pass.
+4. `src/lib/auth.ts`: add the new fields to `AuthUser` and `serializeUser`; fix `getSessionUser`'s SELECT, which omits `birth_month` and `birth_day` while `userSchema` requires them (a live bug); stop `findOrCreateGoogleUser` overwriting `display_name` on each sign-in so an edited name survives. Pick one casing at the API boundary and hold it — `serializeUser` emits camelCase while `profile.astro` reads snake_case today, and that mismatch gets fixed here.
+5. `/profile` becomes the editor in sections — about (display name, batch, based in, bio, profession), details (birthday with a separate day/month switch and year switch, marital with its own switch), privacy (`listed_in_batch`, `open_to_meetups`) — keeping the codename form that is already there. Photos arrive in 13.2 and interests in 13.5.
+6. `GET /api/profile` and `PUT /api/profile`: approved-only, CSRF, Zod-validated, `errorResponse` codes matching the existing routes.
+7. **Done when** the tests pass, `pnpm verify` is clean, an approved alum saves every text field and finds them after a reload, and a pending account gets 401 or 403 from the API.
+
+#### 13.2 Photo upload, the media route, and the photo editor
+
+**Files:** create `src/lib/media.ts`, `tests/media.test.ts`, `src/pages/api/profile/photos.ts`, `src/pages/api/profile/photos/[kind].ts`, `src/pages/api/profile/gallery/[id].ts`, `src/pages/api/media/[...key].ts`, `src/components/PhotoEditor.tsx`; modify `src/pages/profile.astro`.
+
+**Interfaces:**
+- `sniffImageType(bytes: Uint8Array): "image/jpeg" | "image/png" | "image/webp" | null` — pure; magic numbers, never the `Content-Type` header.
+- `buildMediaKey(userId: string, kind: string, ext: string): string` — pure; must always land under `u/<userId>/` and never emit `..`, a slash or a leading dot from its inputs.
+- `saveMedia(env, userId, kind, bytes, contentType)`, `deleteMedia(env, key)`, `mediaUrl(key): string | null`.
+
+**Steps**
+1. Failing tests first in `tests/media.test.ts`: `sniffImageType` accepts real JPEG, PNG and WebP headers and rejects a text file that claims to be a JPEG; `buildMediaKey` stays inside `u/<userId>/` for a hostile user id.
+2. Implement `media.ts`; make the tests pass.
+3. `POST /api/profile/photos` (multipart; `kind` = `cover` | `avatar` | `avatar_then` | `gallery`): approved-only, CSRF, `sniffImageType` plus `PROFILE_CONFIG.maxPhotoBytes`, a count check against 6 for gallery. On success write to R2 through the `MEDIA` binding, store the key, delete the object it replaced, and return the new key.
+4. `DELETE /api/profile/photos/:kind`, `DELETE /api/profile/gallery/:id` (object and row), and `PATCH /api/profile/gallery/:id` for caption and order.
+5. `GET /media/[...key]`: approved-session check, then stream from R2 with `Cache-Control: private, max-age=…`; 404 for a missing key, 401/403 for no session. Never a shared cache.
+6. `PhotoEditor.tsx`: downscale on a canvas before upload (cover ~1600px wide, avatar ~512px square, gallery ~1200px), preview before saving, remove, reorder, caption — with no new dependencies; a canvas and `toBlob` are enough. It replaces the placeholder panel that was drawn during brainstorming.
+7. **Done when** an upload round-trips locally, an oversized or non-image payload is rejected with nothing written to R2, replacing a photo leaves no orphan, and no `<img>` on the profile uses a raw key instead of `mediaUrl`.
+
+#### 13.3 The public profile page
+
+**Files:** create `src/components/ProfileView.astro`, `src/pages/alumni/[userId].astro`; modify `src/pages/profile.astro` (add a "view my profile" link).
+
+**Steps**
+1. `ProfileView.astro` is layout A from the spec: cover strip, circular avatar overlapping on the left, name and batch beside it, then two columns — wide for bio and gallery, narrow for the dense facts. The flip uses the hover/focus swap already in `AboutPage.astro`, adapted for tap on touch devices, and respects reduced motion.
+2. The gallery renders taped prints in rows of three with the handwritten caption, capped at six, and nothing at all when empty.
+3. `/alumni/[userId].astro` sets `prerender = false`, requires an approved session (signed-out visitors are sent to sign-in and back), 404s on an unknown id, and shows the suspended state rather than a profile for a suspended account.
+4. **Done when** the page renders with everything filled, with nothing filled, and with photos in any combination; a signed-out fetch returns no profile data; the flip works at 390×844 (tap), 768×1024 and 1440×900 (hover).
+
+#### 13.4 The batch directory
+
+**Files:** create `src/lib/batch.ts`, `tests/batch.test.ts`; modify `src/components/BatchPage.astro`, `src/pages/batches/[year].astro`, `src/pages/batches/index.astro`, `src/data/mock.ts` (drop `memberNames` and any name it only fed).
+
+**Interfaces:**
+- `summariseBatch(rows): { members: number; notes: number }` — pure; hidden members leave both counts, hidden notes leave the note count.
+- `listBatchMembers(batchYear)`, `batchStats(batchYear)`, `listBatchYears(): Promise<{ year: number; count: number }[]>`.
+
+**Steps**
+1. Failing tests first in `tests/batch.test.ts` for `summariseBatch`: a hidden member is in neither count, a hidden note is in neither, and an empty batch returns zeros rather than a plausible number.
+2. Implement `batch.ts`; make the tests pass.
+3. `BatchPage.astro`: the grid is the real member list with each card linking to `/alumni/<id>`, the avatar is the profile photo when there is one and initials when there is not, and the two hero numbers come from `batchStats`. Delete the fake `68` and `124`.
+4. `/batches/[year].astro` renders on demand behind the approved-session check, and `/batches/index.astro` shows real years and counts.
+5. **Done when** a member who hid is absent from the grid and both counts, a member with no photo still renders, and every number matches a direct D1 query.
+
+#### 13.5 Interests: the catalogue, the picker, and the suggestion queue
+
+**Files:** create `src/lib/interests.ts`, `tests/interests.test.ts`, `src/components/InterestsPicker.tsx`, `src/pages/api/interests.ts`, `src/pages/api/interests/suggest.ts`, `src/pages/api/profile/interests.ts`, `src/pages/admin/suggestions.astro`, `src/pages/api/admin/suggestions/index.ts`, `src/pages/api/admin/suggestions/[id].ts`; modify `src/pages/profile.astro`.
+
+**Interfaces:**
+- `slugify(text: string): string | null` — pure; null when nothing usable remains.
+- `matchInterests(catalogue, query)` — pure type-ahead; case-insensitive, keeps each interest's group.
+- `togglePick(picks: string[], slug: string, cap: number): string[]` — pure; refuses past the cap, never duplicates.
+- `listCatalogue()`, `getUserInterests(userId)`, `setUserInterests(userId, slugs)`, `suggestInterest(userId, text)`, `approveSuggestion(id, group, actorId)`, `declineSuggestion(id, actorId)`.
+
+**Steps**
+1. Failing tests first in `tests/interests.test.ts`: `slugify("Kansi & Batchoy")` is `kansi-batchoy` and punctuation or accents collapse rather than survive; `slugify` returns null for an empty or symbol-only line; `matchInterests` is case-insensitive and ignores a blank query versus a query with no hits; `togglePick` refuses an 11th pick and does not duplicate an existing one.
+2. Implement `interests.ts`; make the tests pass.
+3. `GET /api/interests` returns the active catalogue grouped; `PUT /api/profile/interests` replaces the set (cap 10, active slugs only); `POST /api/interests/suggest` takes one line, approved-only, CSRF, rate-limited the way join is.
+4. `InterestsPicker.tsx` implements the chosen mechanic: search with type-ahead, the grouped shelf below, picks pinned with a counter ("7 of 10"), and the "can't find it — suggest it" affordance feeding the queue.
+5. `/admin/suggestions` lists the queue with approve (choose a group; the slug is derived and must not collide) and decline; both write `profile_audit`. The catalogue seed carries the starter list from the spec, and `active = 0` retires one without breaking anyone who picked it.
+6. **Done when** an approved suggestion becomes pickable with no deploy, a declined one never appears anywhere, and the 11th pick is refused by the API rather than only by the UI.
+
+#### 13.6 Profile reporting (option B)
+
+**Files:** create `src/pages/api/profile/report.ts`, `src/pages/api/admin/profile-reports/index.ts`, `src/pages/api/admin/profile-reports/[id].ts`; modify `src/pages/admin/reports.astro`, `src/components/ProfileView.astro`.
+
+**Steps**
+1. `POST /api/profile/report` takes `target_id` and an optional `note`: approved-only, CSRF; one row per reporter per target, so a second report updates the note instead of adding a row; reporting yourself returns a 200 no-op rather than an error.
+2. `/admin/reports` gains a second section listing open profile reports with the reporter, the target, the note and a link to the profile. Closing one writes `profile_audit`. The spec is explicit that the admin cannot remove a single photo under B — the choices are to ask the member or suspend the account.
+3. The "Report this profile" link sits at the bottom of the profile view and appears only on somebody else's profile.
+4. **Done when** a report reaches the admin list, closing it clears it, and the same reporter cannot file twice. No auto-hide by report count — deliberately, per the spec.
+
+#### 13.7 Verification for the phase
+
+1. `pnpm verify` → 0 errors, and the output is shown.
+2. `pnpm test` → all pass, including the new `profile`, `media`, `batch` and `interests` suites.
+3. Local walkthrough with three accounts (admin, approved alum, pending): fill a profile, upload all four photo kinds, pick interests, suggest one, approve it in admin, report a profile, close the report, hide the member, then confirm the grid and both counts change together.
+4. Record new baselines for `/profile`, `/alumni/[id]`, `/batches/[year]` and `/batches` with date and reason. `/teachers` is untouched until Phase 14.
+5. Migration applies locally only: `pnpm wrangler d1 migrations apply DB --local`. Remote application waits for explicit approval, and the deploy order stays migration-then-Worker.
+
+**Progress (2026-10-17):** 13.1 built and verified. Migration `0009_profile.sql` applied to local D1 only (38 statements; 6 new tables, 12 new `users` columns, 92 seeded interests in 10 groups). New tests `tests/profile-view.test.ts` and `tests/profile-input.test.ts` (17 cases, all written failing-first); `pnpm test` 34/34; `pnpm verify` 0 errors, 0 warnings, 9 pre-existing hints. `/profile` is now the editor and `/api/profile` serves GET and PUT. Runtime-checked: signed-out API access is refused with 401 `sign_in_required`, and `/profile` renders 200. Not verified yet: the signed-in round-trip, which needs a real Google sign-in. Two pre-existing bugs fixed on the way: `getSessionUser` no longer omits the birthday columns that `userSchema` requires, and Google sign-in no longer overwrites `display_name` on every login. **13.2 built and verified:** photo pipeline is in — `src/lib/media.ts` (magic-number sniffing, key safety, R2 put/delete behind a local `MediaBucket` type), `tests/media.test.ts` (14 cases, written failing-first), the upload/delete/caption routes and `/media/<key>` serving route, and the Photos panel in `/profile` (cover, profile picture, batch-era photo, six-slot gallery, browser-side resizing). `pnpm test` 52/52; `pnpm verify` 0 errors, 0 warnings. Signed-out runtime checks: uploads → 401, `/media/<key>` → 404, traversal-shaped key → 404. Not verified yet: the upload round-trip itself, which needs a signed-in approved session. Nothing committed.
+
+**Progress (2026-10-17, later):** 13.3 to 13.6 built, 13.7 run. `/alumni/[userId]` is the public profile (layout A, the AboutPage-style now/then flip as a real button with `aria-pressed`, taped gallery prints, a real 404 for an unknown id, a suspended state, and the report link on somebody else's profile); `/alumni/me` resolves to the signed-in viewer so the editor's "View my profile" link needs no id from the API. The batch directory is real: `src/lib/batch.ts` (pure, 4 cases) with `batch-db.ts` behind it, `/batches` lists only years somebody is listed in, and both hero numbers come from `batchStats` — the fake `68` and `124` and `memberNames` are gone. Interests are the chosen mechanic: `src/lib/interests.ts` (pure, 9 cases), `interests-db.ts`, `GET /api/interests`, `PUT /api/profile/interests` (cap 10 enforced by the API, not only the picker), `POST /api/interests/suggest` (3 pending per member, no rate limiting exists in this codebase to copy), `/admin/suggestions` with approve-into-a-group and decline, both writing `profile_audit`. Reporting is option B: `POST /api/profile/report`, `/api/admin/profile-reports`, and a second section on `/admin/reports`; the reporter cannot file twice, and closing writes `profile_audit`. New tests `tests/batch.test.ts` and `tests/interests.test.ts` (13 cases, written failing-first). `pnpm test` 65/65; `pnpm verify` 0 errors, 0 warnings, 10 hints, exit 0. Signed-out runtime: the alumni and batch pages redirect to sign-in, and every new API answers 401. Local D1 arithmetic checked with two temporary users (one listed, one hidden) and three notes (one hidden): the grid held only the listed member, the member count was 1, the note count 2, and the year list showed 2015 once — all temp rows deleted afterwards. Runtime SQL was checked against the real schema, not assumed (`profile_audit`'s CHECK admits the three new actions; `profile_reports_pair_unique` matches the `ON CONFLICT` target; `interest_suggestions_pending_unique` is what makes the suggestion insert idempotent). Not verified, and why: the signed-in walkthrough needs a real Google sign-in, and the new baselines for `/profile`, `/alumni/[id]`, `/batches/[year]` and `/batches` need a capture harness that does not exist in this repo — both are the owner's. One known gap: `AuthModal.tsx` drops the `returnTo` the gated pages send, so a signed-out visitor signs in but does not land back on the page they asked for; the modal is uncommitted owner work and was left alone. Nothing committed.
+
+### Phase 14: Teacher pool admin and card images (planned)
+
+**Spec:** `docs/specs/profile.md`. Independent of Phase 13 — it can run before it if the owner prefers, and it reuses 13.2's `media.ts` and `saveMedia` pipeline, so it runs after at least that much.
+
+**Goal:** the owner curates the teacher pool from inside the app — add a teacher from then or now, edit, deactivate — and every teacher card carries a photo instead of an initials circle.
+
+**Decisions:** no teacher accounts, no claiming, no onboarding copy in this build; the nullable `teachers.user_id` link stays unused and waiting. `active = 0` removes a teacher from the directory while their page survives. `tenure` (for example "1988–2014") renders on the teacher page when it is set.
+
+**Files:** modify `src/lib/teachers.ts`, `src/pages/teachers/index.astro`, `src/pages/teachers/[teacherId].astro`; create `src/pages/admin/teachers.astro`, `src/pages/api/admin/teachers/index.ts`, `src/pages/api/admin/teachers/[id].ts`, `src/pages/api/admin/teachers/[id]/photo.ts`, `tests/teacher-card.test.ts`.
+
+**Steps**
+1. Failing tests first in `tests/teacher-card.test.ts` for a pure `teacherCardImage(teacher)` that returns the photo URL or the initials fallback, and a pure `isListedTeacher(teacher)` that decides listing from `active`.
+2. `teachers.ts`: add `photo_key`, `tenure` and `active` to `Teacher`, filter `getAllTeachers` on `active = 1`, and add `createTeacher`, `updateTeacher`, `setTeacherActive` and `saveTeacherPhoto`.
+3. `/admin/teachers`: list, add and edit forms, a photo upload through the same `saveMedia` path and the same 512px square downscale used for an avatar, and a deactivate toggle. Every write goes to `profile_audit`.
+4. `/teachers` and `/teachers/[teacherId]`: render the photo through `mediaUrl` with the initials circle as fallback, and show `tenure` when present.
+5. **Done when** adding a teacher with a photo shows it on the directory and their page, a deactivated teacher leaves the directory but keeps their page, and a teacher with no photo falls back to initials.
+6. Record new baselines for `/teachers` and `/teachers/[teacherId]` with the date and the reason — those two pages change on purpose, which is exactly the kind of change the baseline rule exists to make visible.
+
 ### Deferred / not in this task
 
 - Event-themed site, comments and suggestions corner, event contests with prizes, badges and milestones, email digest, Tier 2 and Tier 3 features.
 - Singles corner: skipped. If ever built, it must be opt-in and show interests only.
+- Wall "post as" (real name, codename, or anonymous chosen at post time). Decided 2026-10-17, but it belongs to the wall, not the profile: `/api/pins` silently signs every note with the codename today and must validate the chosen signature instead. Not lost — it rides the wall's next change.
+- Wall photo notes (HTTP 501 today). Not part of Phase 13; see open question 9.
+- Teacher accounts, claiming, and onboarding copy. Deferred out of Phase 14 on purpose; the nullable `teachers.user_id` link waits for them.
+- Browse by interest / "who is up for coffee" page. Phase 13 collects the fields it needs; the page itself is later.
+- Badges and milestones. The profile layout leaves a slot for them; nothing is built.
 
 ### Open questions
 
@@ -297,8 +433,8 @@ Not verified: approve and decline from /admin/approvals and their admin_audit ro
 5. Report auto-hide threshold. (Proposal: 3 distinct reporters.)
 Phase 7 moderation decisions DECIDED (owner, 2026-10-11): codename first set free, then 1 change per 7 days; use a separate `hidden` INTEGER column on pins (do not extend status); admin reposition is current wall date only while hidden/archived review is a separate read-only admin list.
 6. How the first `super_admin` is created. (Proposal: the owner runs a one-time D1 command.)
-7. Who supplies the first teacher list for Phase 10?
+7. Who supplies the first teacher list for Phase 10? DECIDED (owner, 2026-10-17): the owner curates it in the app — teachers from then and now, added through the new `/admin/teachers` (Phase 14). Teacher accounts and claiming are deferred.
 8. Donation methods: GCash only, or add PayPal/Ko-fi? DECIDED (owner, 2026-10-17): GCash, Maribank, GoTyme and bank transfer, each with its own QR code.
-9. Do wall photo notes ship with Phase 11 or later?
+9. Do wall photo notes ship with Phase 11 or later? DECIDED (owner, 2026-10-17): later. Phase 13 is profile photos only; wall photo notes (HTTP 501 today) are not part of it and still need their own decision.
 10. February 29 birthdays in non-leap years. (Proposal: show on February 28.)
 11. Should the donation corner move ahead of Phases 10 and 11?

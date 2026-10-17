@@ -1,0 +1,576 @@
+---
+import type { InterestOption } from "../lib/interests";
+import { mediaUrl } from "../lib/media";
+import type { ProfileView } from "../lib/profile-view";
+
+interface Props {
+  view: ProfileView;
+  gallery: { id: string; url: string | null; caption: string | null }[];
+  interests: InterestOption[];
+  targetId: string;
+  isOwner: boolean;
+  reportable: boolean;
+}
+
+const { view, gallery, interests, targetId, isOwner, reportable } = Astro.props;
+
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+const coverUrl = mediaUrl(view.coverKey);
+const avatarUrl = mediaUrl(view.avatarKey);
+const avatarThenUrl = mediaUrl(view.avatarThenKey);
+
+const initials = view.displayName
+  .split(" ")
+  .filter(Boolean)
+  .map((part) => part[0]?.toUpperCase() ?? "")
+  .slice(0, 2)
+  .join("");
+
+// The day and month are the shared ones; the year only appears when its own
+// switch is on, and it can appear on its own.
+const birthday =
+  view.birthMonth === null || view.birthDay === null
+    ? view.birthYear === null
+      ? null
+      : String(view.birthYear)
+    : `${MONTHS[view.birthMonth - 1]} ${view.birthDay}${view.birthYear === null ? "" : `, ${view.birthYear}`}`;
+
+const socials = [
+  { name: "Facebook", handle: view.socials.facebook },
+  { name: "Instagram", handle: view.socials.instagram },
+  { name: "TikTok", handle: view.socials.tiktok },
+].filter((social) => social.handle !== null);
+
+const photos = gallery.filter((photo) => photo.url !== null);
+
+const interestGroups: { group: string; items: InterestOption[] }[] = [];
+
+for (const interest of interests) {
+  const existing = interestGroups.find((entry) => entry.group === interest.group);
+
+  if (existing) existing.items.push(interest);
+  else interestGroups.push({ group: interest.group, items: [interest] });
+}
+---
+
+<article class="profile-view">
+  <div class="profile-cover">
+    {coverUrl && <img src={coverUrl} alt="" />}
+  </div>
+
+  <header class="profile-identity">
+    <div class="profile-avatar-slot">
+      {
+        avatarThenUrl ? (
+          <button
+            type="button"
+            class="profile-avatar is-flippable"
+            data-flip
+            aria-pressed="false"
+            aria-label="Show my batch-era photo"
+          >
+            {avatarUrl ? <img class="profile-avatar-now" src={avatarUrl} alt="" /> : <span class="profile-avatar-initials">{initials}</span>}
+            <img class="profile-avatar-then" src={avatarThenUrl} alt="" />
+            <span class="profile-avatar-tag">then</span>
+          </button>
+        ) : (
+          <div class="profile-avatar">
+            {avatarUrl ? <img class="profile-avatar-now" src={avatarUrl} alt="" /> : <span class="profile-avatar-initials">{initials}</span>}
+          </div>
+        )
+      }
+    </div>
+
+    <div class="profile-heading">
+      <h1>{view.displayName}</h1>
+      {view.batchYear && <span class="profile-batch">Class of {view.batchYear}</span>}
+      {view.openToMeetups && <span class="profile-open">Open to meeting up with classmates</span>}
+      {isOwner && <a class="profile-owner-link" href="/profile">Edit my profile</a>}
+    </div>
+  </header>
+
+  <div class="profile-body">
+    <div class="profile-wide">
+      {
+        view.bio && (
+          <section class="profile-block">
+            <h2>A few words</h2>
+            <p class="profile-bio">{view.bio}</p>
+          </section>
+        )
+      }
+
+      {
+        interestGroups.length > 0 && (
+          <section class="profile-block">
+            <h2>Into</h2>
+            <div class="profile-interests">
+              {interestGroups.map((entry) => (
+                <div class="profile-interest-group">
+                  <span class="profile-interest-group-name">{entry.group}</span>
+                  <span class="profile-chips">
+                    {entry.items.map((interest) => (
+                      <span class="profile-chip">{interest.label}</span>
+                    ))}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+      }
+
+      {
+        photos.length > 0 && (
+          <section class="profile-block">
+            <h2>Prints</h2>
+            <div class="profile-prints">
+              {photos.map((photo, index) => (
+                <figure class={`print print-${index % 3}`}>
+                  <img src={photo.url ?? ""} alt="" />
+                  {photo.caption && <figcaption>{photo.caption}</figcaption>}
+                </figure>
+              ))}
+            </div>
+          </section>
+        )
+      }
+    </div>
+
+    <aside class="profile-narrow">
+      {
+        (view.profession || view.basedIn || birthday || view.maritalStatus || socials.length > 0) && (
+          <section class="profile-block">
+            <h2>Details</h2>
+            <dl class="profile-facts">
+              {view.profession && (
+                <>
+                  <dt>Now</dt>
+                  <dd>{view.profession}</dd>
+                </>
+              )}
+              {view.basedIn && (
+                <>
+                  <dt>Based in</dt>
+                  <dd>{view.basedIn}</dd>
+                </>
+              )}
+              {birthday && (
+                <>
+                  <dt>Birthday</dt>
+                  <dd>{birthday}</dd>
+                </>
+              )}
+              {view.maritalStatus && (
+                <>
+                  <dt>Status</dt>
+                  <dd>{view.maritalStatus}</dd>
+                </>
+              )}
+              {socials.map((social) => (
+                <>
+                  <dt>{social.name}</dt>
+                  <dd>{social.handle}</dd>
+                </>
+              ))}
+            </dl>
+          </section>
+        )
+      }
+    </aside>
+  </div>
+
+  {
+    reportable && (
+      <footer class="profile-report">
+        <button type="button" class="profile-report-link" data-report-profile>
+          Report this profile
+        </button>
+        <form class="profile-report-form" data-report-form data-target={targetId} hidden>
+          <label class="profile-report-label">
+            What is wrong?
+            <textarea rows="3" maxlength="500" data-report-note placeholder="Tell the admin what you saw." />
+          </label>
+          <button class="button button-secondary" type="submit">Send report</button>
+        </form>
+        <p class="profile-report-note">
+          Reports go to the site admin, who can ask the member to change something or suspend the account.
+        </p>
+      </footer>
+    )
+  }
+</article>
+
+<style>
+  .profile-view {
+    margin-top: 1.5rem;
+  }
+
+  .profile-cover {
+    aspect-ratio: 1600 / 640;
+    overflow: hidden;
+    background: #efece6;
+  }
+
+  .profile-cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .profile-identity {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-end;
+    margin-top: -3rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .profile-avatar-slot {
+    flex: 0 0 auto;
+  }
+
+  .profile-avatar {
+    display: grid;
+    place-items: center;
+    width: 8rem;
+    height: 8rem;
+    padding: 0;
+    border: 4px solid #fff;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #efece6;
+    position: relative;
+  }
+
+  .profile-avatar.is-flippable {
+    cursor: pointer;
+  }
+
+  .profile-avatar img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .profile-avatar img,
+  .profile-avatar-then {
+    transition: opacity 0.25s ease;
+  }
+
+  .profile-avatar-initials {
+    font-size: 2rem;
+    letter-spacing: 0.05em;
+    color: #6b625a;
+  }
+
+  .profile-avatar-then {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+
+  /* The same swap AboutPage uses — hover and focus-within — plus a tap, which
+     is the only one of the three a phone can offer. */
+  .profile-avatar:hover .profile-avatar-now,
+  .profile-avatar:focus-within .profile-avatar-now,
+  .profile-avatar[aria-pressed="true"] .profile-avatar-now {
+    opacity: 0;
+  }
+
+  .profile-avatar:hover .profile-avatar-then,
+  .profile-avatar:focus-within .profile-avatar-then,
+  .profile-avatar[aria-pressed="true"] .profile-avatar-then {
+    opacity: 1;
+  }
+
+  .profile-avatar:focus-visible {
+    outline: 2px solid #a7513c;
+    outline-offset: 3px;
+  }
+
+  .profile-avatar-tag {
+    position: absolute;
+    right: 0.4rem;
+    bottom: 0.4rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .profile-avatar img,
+    .profile-avatar-then {
+      transition: none;
+    }
+  }
+
+  .profile-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .profile-heading h1 {
+    margin: 0;
+  }
+
+  .profile-batch,
+  .profile-open {
+    font-size: 0.85rem;
+    color: #6b625a;
+  }
+
+  .profile-owner-link {
+    font-size: 0.85rem;
+  }
+
+  .profile-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 2.5rem;
+    margin-top: 2rem;
+  }
+
+  .profile-block + .profile-block {
+    margin-top: 2rem;
+  }
+
+  .profile-block h2 {
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 0 0 0.75rem;
+  }
+
+  .profile-bio {
+    white-space: pre-wrap;
+  }
+
+  .profile-interests {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .profile-interest-group-name {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6b625a;
+    margin-bottom: 0.3rem;
+  }
+
+  .profile-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .profile-chip {
+    padding: 0.2rem 0.6rem;
+    border: 1px solid #ddd6cc;
+    border-radius: 999px;
+    font-size: 0.85rem;
+  }
+
+  .profile-prints {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .print {
+    margin: 0;
+    padding: 0.5rem 0.5rem 0.25rem;
+    background: #fffdf8;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+    transform: rotate(-1.2deg);
+  }
+
+  .print-1 {
+    transform: rotate(1deg);
+  }
+
+  .print-2 {
+    transform: rotate(-0.4deg);
+  }
+
+  .print img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+
+  .print figcaption {
+    font-family: "Caveat", cursive;
+    font-size: 1.1rem;
+    line-height: 1.2;
+    padding: 0.35rem 0.15rem 0.15rem;
+  }
+
+  .profile-facts {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.4rem 1rem;
+    margin: 0;
+  }
+
+  .profile-facts dt {
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6b625a;
+    align-self: baseline;
+  }
+
+  .profile-facts dd {
+    margin: 0;
+  }
+
+  .profile-report {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e6e0d8;
+  }
+
+  .profile-report-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #6b625a;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .profile-report-note {
+    font-size: 0.85rem;
+    color: #6b625a;
+    margin: 0.4rem 0 0;
+  }
+
+  .profile-report-form {
+    margin: 0.75rem 0 0;
+  }
+
+  .profile-report-label {
+    display: block;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6b625a;
+    margin-bottom: 0.5rem;
+  }
+
+  .profile-report-label textarea {
+    display: block;
+    width: min(32rem, 100%);
+    margin-top: 0.35rem;
+    padding: 0.5rem;
+    border: 1px solid #ddd6cc;
+    border-radius: 0.5rem;
+    font: inherit;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  @media (max-width: 720px) {
+    .profile-body {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2rem;
+    }
+
+    .profile-identity {
+      margin-top: -2.5rem;
+    }
+
+    .profile-prints {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>
+
+<script>
+  for (const button of document.querySelectorAll<HTMLElement>("[data-flip]")) {
+    button.addEventListener("click", () => {
+      const pressed = button.getAttribute("aria-pressed") === "true";
+
+      button.setAttribute("aria-pressed", pressed ? "false" : "true");
+    });
+  }
+
+  for (const open of document.querySelectorAll<HTMLElement>("[data-report-profile]")) {
+    open.addEventListener("click", () => {
+      const form = open.parentElement?.querySelector<HTMLFormElement>("[data-report-form]");
+
+      if (!form) return;
+
+      form.removeAttribute("hidden");
+      open.setAttribute("hidden", "");
+    });
+  }
+
+  for (const form of document.querySelectorAll<HTMLFormElement>("[data-report-form]")) {
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      void (async () => {
+        const note = form.querySelector<HTMLTextAreaElement>("[data-report-note]");
+        const button = form.querySelector<HTMLButtonElement>("button[type='submit']");
+
+        if (button) button.disabled = true;
+
+        try {
+          const csrf = await fetch("/api/auth/csrf", { credentials: "same-origin" });
+          const token = (await csrf.json() as { token?: string }).token;
+
+          if (!csrf.ok || !token) throw new Error("Could not prepare the report.");
+
+          const response = await fetch("/api/profile/report", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+            body: JSON.stringify({ target_id: form.dataset.target, note: note?.value ?? "" }),
+          });
+          const payload = await response.json() as { reported?: boolean; error?: { message: string } };
+
+          if (!response.ok) throw new Error(payload.error?.message ?? "That report could not be sent.");
+
+          form.replaceChildren("Thank you. The admin has your report.");
+        } catch (error) {
+          if (button) button.disabled = false;
+
+          const message = document.createElement("p");
+
+          message.className = "profile-report-note";
+          message.textContent = error instanceof Error ? error.message : "That report could not be sent.";
+          form.appendChild(message);
+        }
+      })();
+    });
+  }
+</script>

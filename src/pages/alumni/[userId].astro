@@ -1,0 +1,99 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import ProfileView from "../../components/ProfileView.astro";
+import { getSessionUser, isApproved } from "../../lib/auth";
+import { getUserInterests } from "../../lib/interests-db";
+import { getPublicProfile } from "../../lib/profile";
+
+export const prerender = false;
+
+const viewer = await getSessionUser(Astro.request);
+
+// Profiles are for signed-in, approved alumni. A visitor who is not one goes to
+// sign in and comes straight back here.
+if (!viewer || !isApproved(viewer)) {
+  return Astro.redirect(`/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
+}
+
+const requested = Astro.params.userId ?? "";
+
+// `/alumni/me` is the editor's own link, so the editor needs no id of its own.
+if (requested === "me") {
+  return Astro.redirect(`/alumni/${viewer.id}`);
+}
+
+const profile = await getPublicProfile(requested);
+
+// An unknown id is nobody's profile. The batch directory stays the only door,
+// so this answers with a 404 rather than an empty page.
+if (!profile) {
+  Astro.response.status = 404;
+}
+
+const interests = profile ? await getUserInterests(requested) : [];
+const suspended = profile !== null && profile.status !== "approved";
+
+const title = !profile ? "Profile not found" : suspended ? "Profile unavailable" : `${profile.view.displayName} · Baleno alum`;
+
+const eyebrow = "PROFILE";
+---
+
+<BaseLayout title={title}>
+  <main class="profile-page content-width">
+    {
+      profile === null ? (
+        <section class="profile-notice">
+          <p class="eyebrow">
+            <span class="eyebrow-line" /> {eyebrow}
+          </p>
+          <h1>
+            No profile <em>here.</em>
+          </h1>
+          <p>
+            That link does not lead to a profile. The batch pages are the way in — find your year and the
+            people in it.
+          </p>
+          <p>
+            <a href="/batches">Go to the batches</a>
+          </p>
+        </section>
+      ) : suspended ? (
+        <section class="profile-notice">
+          <p class="eyebrow">
+            <span class="eyebrow-line" /> {eyebrow}
+          </p>
+          <h1>
+            This profile is <em>not available.</em>
+          </h1>
+          <p>
+            This account is suspended, so the profile and its photos are hidden. If you think this is a
+            mistake, get in touch with the site admin.
+          </p>
+          <p>
+            <a href="/batches">Back to the batches</a>
+          </p>
+        </section>
+      ) : (
+        <ProfileView
+          view={profile.view}
+          gallery={profile.gallery}
+          interests={interests}
+          targetId={requested}
+          isOwner={viewer.id === requested}
+          reportable={viewer.id !== requested}
+        />
+      )
+    }
+  </main>
+</BaseLayout>
+
+<style>
+  .profile-page {
+    padding-bottom: 4rem;
+  }
+
+  .profile-notice {
+    max-width: 40rem;
+    margin-top: 3rem;
+  }
+</style>

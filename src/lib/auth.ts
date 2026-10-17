@@ -1,5 +1,5 @@
-import { env } from "cloudflare:workers"
 
+import { env } from "cloudflare:workers"
 import { z } from "zod"
 
 import { AUTH_CONFIG, type UserRole, type UserStatus } from "../config"
@@ -483,11 +483,12 @@ export async function findOrCreateGoogleUser(identity: { subject: string; email:
   await env.DB.prepare(
     `INSERT INTO users (
        id, google_subject, email, display_name, role, status,
-       batch_year, join_note, created_at, updated_at
-     ) VALUES (?, ?, ?, ?, 'alum', 'pending', NULL, NULL, ?, ?)
+       batch_year, join_note, birth_month, birth_day, birthday_visible, created_at, updated_at
+     ) VALUES (?, ?, ?, ?, 'alum', 'pending', NULL, NULL, NULL, NULL, 0, ?, ?)
+     -- display_name is the member's to edit in the profile, so signing in
+     -- again must not put the Google name back.
      ON CONFLICT(google_subject) DO UPDATE SET
        email = excluded.email,
-       display_name = excluded.display_name,
        updated_at = excluded.updated_at`,
   )
     .bind(id, identity.subject, identity.email, identity.displayName, now, now)
@@ -496,6 +497,7 @@ export async function findOrCreateGoogleUser(identity: { subject: string; email:
   const row = await env.DB.prepare(
     `SELECT id, google_subject, email, display_name, role, status,
             batch_year, join_note, codename, codename_updated_at,
+            birth_month, birth_day, birthday_visible,
             created_at, updated_at
      FROM users WHERE google_subject = ?`,
   )

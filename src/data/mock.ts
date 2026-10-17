@@ -350,24 +350,6 @@ export const events = [
   },
 ]
 
-export const memberNames = [
-  "Alex Morgan",
-
-  "Jamie Lee",
-
-  "Samira Khan",
-
-  "Riley Torres",
-
-  "Maya Chen",
-
-  "Jordan Cruz",
-
-  "Taylor Kim",
-
-  "Casey Rivera",
-]
-
 export const homePreviewNotes = [
   initialNotes[0],
 

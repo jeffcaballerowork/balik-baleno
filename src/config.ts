@@ -45,3 +45,23 @@ export const AUTH_CONFIG = {
 export type UserRole = (typeof AUTH_CONFIG.roles)[number]
 
 export type UserStatus = (typeof AUTH_CONFIG.statuses)[number]
+
+export const PROFILE_CONFIG = {
+  maxDisplayNameLength: 120,
+
+  maxProfessionLength: 80,
+
+  maxBioLength: 400,
+
+  maxBasedInLength: 60,
+
+  maxCaptionLength: 80,
+
+  maxGalleryPhotos: 6,
+
+  maxInterests: 10,
+
+  maxPhotoBytes: 2_000_000,
+
+  birthYearMinimum: 1930,
+} as const

@@ -32,6 +32,12 @@
       "migrations_dir": "migrations",
     },
   ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "balik-baleno-media",
+    },
+  ],
   "assets": {
     "directory": "./dist/",
     "html_handling": "drop-trailing-slash",

@@ -1,23 +1,23 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import BatchPage from "../../components/BatchPage.astro";
+import { AUTH_CONFIG } from "../../config";
+import { getSessionUser, isApproved } from "../../lib/auth";
 
-interface Props {
-  year: number;
+export const prerender = false;
+
+const viewer = await getSessionUser(Astro.request);
+
+// Batch pages are for signed-in, approved alumni, like the profiles they lead to.
+if (!viewer || !isApproved(viewer)) {
+  return Astro.redirect(`/sign-in?returnTo=${encodeURIComponent(Astro.url.pathname)}`);
 }
 
-export function getStaticPaths() {
-  return Array.from({ length: 30 }, (_, index) => {
-    const year = 2025 - index;
+const year = Number(Astro.params.year ?? "");
 
-    return {
-      params: { year: String(year) },
-      props: { year },
-    };
-  });
+if (!Number.isInteger(year) || year < AUTH_CONFIG.batchYearMinimum || year > AUTH_CONFIG.batchYearMaximum) {
+  return Astro.redirect("/batches");
 }
-
-const { year } = Astro.props;
 ---
 
 <BaseLayout title={`Class of ${year}`}>

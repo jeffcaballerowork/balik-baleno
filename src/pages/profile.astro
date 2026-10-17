@@ -1,164 +1,1227 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro"
+
+import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
 ---
 
 <BaseLayout title="Your profile">
   <main class="auth-page content-width">
     <p class="eyebrow"><span class="eyebrow-line"></span> PROFILE</p>
-    <h1>Your <em>codename.</em></h1>
+    <h1>Your <em>profile.</em></h1>
     <p id="profile-status">Loading your profile…</p>
-    <form id="codename-form">
-      <label>
-        Codename
-        <input
-          id="codename-input"
-          name="codename"
-          type="text"
-          minlength="3"
-          maxlength="20"
-          autocomplete="nickname"
-          placeholder="e.g. Sampaguita '09"
-        />
-      </label>
-      <p>3 to 20 characters: letters, numbers, spaces, hyphens, or underscores. Your first codename is free; after that it can be changed once every 7 days. It signs every note you post.</p>
-      <button class="button button-primary" type="submit">Save codename</button>
-    </form>
 
-    <form id="birthday-form" style="margin-top: 2rem;">
-      <h2>Birthday</h2>
-      <div style="display: flex; gap: 1rem; align-items: end; flex-wrap: wrap;">
-        <label>
-          Month
-          <select id="birth-month" name="birthMonth">
-            <option value="">Choose…</option>
-            <option value="1">January</option>
-            <option value="2">February</option>
-            <option value="3">March</option>
-            <option value="4">April</option>
-            <option value="5">May</option>
-            <option value="6">June</option>
-            <option value="7">July</option>
-            <option value="8">August</option>
-            <option value="9">September</option>
-            <option value="10">October</option>
-            <option value="11">November</option>
-            <option value="12">December</option>
-          </select>
+    <div id="profile-body" hidden>
+      <p class="profile-nav"><a href="/alumni/me">View my profile</a></p>
+      <section class="profile-block">
+        <h2>About you</h2>
+        <form id="about-form">
+          <label class="field">
+            Name shown to other alumni
+            <input
+              id="display-name"
+              name="displayName"
+              type="text"
+              maxlength={PROFILE_CONFIG.maxDisplayNameLength}
+              autocomplete="name"
+            />
+          </label>
+          <div class="field-row">
+            <label class="field">
+              Batch year
+              <input
+                id="batch-year"
+                name="batchYear"
+                type="number"
+                min={AUTH_CONFIG.batchYearMinimum}
+                max={AUTH_CONFIG.batchYearMaximum}
+                placeholder={String(AUTH_CONFIG.batchYearMaximum)}
+              />
+            </label>
+            <label class="field">
+              Based in
+              <input
+                id="based-in"
+                name="basedIn"
+                type="text"
+                maxlength={PROFILE_CONFIG.maxBasedInLength}
+                placeholder="e.g. Iloilo City"
+              />
+            </label>
+          </div>
+          <p class="field-hint">
+            Based in is shown on your profile whenever it has something in it. Leave it blank to keep it
+            off, and clear it to take it down.
+          </p>
+          <label class="field">
+            What you do now
+            <input id="profession" name="profession" type="text" maxlength={PROFILE_CONFIG.maxProfessionLength} />
+          </label>
+          <label class="field">
+            A few words
+            <textarea id="bio" name="bio" rows="4" maxlength={PROFILE_CONFIG.maxBioLength}></textarea>
+          </label>
+          <button class="button button-primary" type="submit">Save about you</button>
+        </form>
+      </section>
+
+      <section class="profile-block">
+        <h2>Birthday</h2>
+        <form id="birthday-form">
+          <div class="field-row">
+            <label class="field">
+              Month
+              <select id="birth-month" name="birthMonth">
+                <option value="">Choose…</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+            </label>
+            <label class="field">
+              Day
+              <input id="birth-day" name="birthDay" type="number" min="1" max="31" placeholder="DD" />
+            </label>
+          </div>
+          <label class="check">
+            <input id="birthday-visible" name="birthdayVisible" type="checkbox" />
+            Show my birthday on the wall and on my profile
+          </label>
+          <label class="field">
+            Year
+            <input
+              id="birth-year"
+              name="birthYear"
+              type="number"
+              min={PROFILE_CONFIG.birthYearMinimum}
+              max={AUTH_CONFIG.batchYearMaximum}
+              placeholder="YYYY"
+            />
+          </label>
+          <label class="check">
+            <input id="birth-year-visible" name="birthYearVisible" type="checkbox" />
+            Show my year of birth (a separate switch from the day and month)
+          </label>
+          <p class="field-hint">
+            Optional. If you share your birthday, we'll show a celebrant note on the wall on your day. The
+            year stays hidden unless you switch it on.
+          </p>
+          <button class="button button-secondary" type="submit">Save birthday</button>
+        </form>
+      </section>
+
+      <section class="profile-block">
+        <h2>Details</h2>
+        <form id="details-form">
+          <label class="field">
+            Marital status
+            <select id="marital-status" name="maritalStatus">
+              <option value="">Not saying</option>
+              <option value="single">Single</option>
+              <option value="married">Married</option>
+              <option value="widowed">Widowed</option>
+              <option value="separated">Separated</option>
+            </select>
+          </label>
+          <label class="check">
+            <input id="marital-visible" name="maritalVisible" type="checkbox" />
+            Show my marital status on my profile
+          </label>
+          <label class="field">
+            Facebook
+            <input id="social-facebook" name="socialFacebook" type="text" maxlength={PROFILE_CONFIG.maxDisplayNameLength} />
+          </label>
+          <label class="field">
+            Instagram
+            <input id="social-instagram" name="socialInstagram" type="text" maxlength={PROFILE_CONFIG.maxDisplayNameLength} />
+          </label>
+          <label class="field">
+            TikTok
+            <input id="social-tiktok" name="socialTiktok" type="text" maxlength={PROFILE_CONFIG.maxDisplayNameLength} />
+          </label>
+          <button class="button button-secondary" type="submit">Save details</button>
+        </form>
+      </section>
+
+      <section class="profile-block">
+        <h2>Into</h2>
+        <p class="field-hint" id="interests-counter">Loading the interest list…</p>
+        <div class="interest-picks" id="interest-picks"></div>
+        <label class="field">
+          Search interests
+          <input
+            id="interest-search"
+            type="search"
+            placeholder="Type to search, e.g. batchoy"
+            autocomplete="off"
+          />
         </label>
-        <label>
-          Day
-          <input id="birth-day" name="birthDay" type="number" min="1" max="31" placeholder="DD" />
-        </label>
-        <label>
-          <input id="birthday-visible" name="birthdayVisible" type="checkbox" />
-          Show on wall
-        </label>
-      </div>
-      <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;">
-        Optional. If you share your birthday, we'll show a celebrant note on the wall on your day.
-      </p>
-      <button class="button button-secondary" type="submit" style="margin-top: 1rem;">Save birthday</button>
-    </form>
+        <div class="interest-chips" id="interest-results"></div>
+        <div class="interest-shelf" id="interest-shelf"></div>
+        <form id="suggest-form">
+          <label class="field">
+            Can&apos;t find it? Suggest an interest
+            <input id="suggest-input" type="text" maxlength="80" placeholder="e.g. Sari-sari store" />
+          </label>
+          <p class="field-hint">An admin reviews it. If it is approved it becomes pickable for everyone, no deploy needed.</p>
+          <button class="button button-secondary" type="submit">Send suggestion</button>
+        </form>
+      </section>
+
+      <section class="profile-block">
+        <h2>Privacy</h2>
+        <form id="privacy-form">
+          <label class="check">
+            <input id="listed-in-batch" name="listedInBatch" type="checkbox" />
+            List me on my batch page
+          </label>
+          <label class="check">
+            <input id="open-to-meetups" name="openToMeetups" type="checkbox" />
+            Open to meeting up with classmates
+          </label>
+          <p class="field-hint">
+            Meeting up is off by default, and nothing about it is live or location-based. Unlisting yourself
+            takes you out of your batch page and its counts.
+          </p>
+          <button class="button button-secondary" type="submit">Save privacy</button>
+        </form>
+      </section>
+
+      <section class="profile-block">
+        <h2>Photos</h2>
+        <p class="field-hint">
+          Photos are resized in your browser before they are uploaded, they are stored off the site, and
+          only signed-in approved alumni can see them. One photo per slot — choosing a new one replaces
+          the old.
+        </p>
+
+        <div class="photo-slot">
+          <div class="photo-frame photo-frame-cover" id="cover-preview"></div>
+          <div class="photo-actions">
+            <button type="button" class="button button-secondary" data-pick="cover">Choose cover photo</button>
+            <button type="button" class="button button-secondary photo-remove" data-kind="cover" hidden>Remove</button>
+            <input id="cover-input" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp" data-kind="cover" />
+          </div>
+        </div>
+
+        <div class="photo-slot">
+          <div class="photo-frame photo-frame-round" id="avatar-preview"></div>
+          <p class="field-hint">Profile picture</p>
+          <div class="photo-actions">
+            <button type="button" class="button button-secondary" data-pick="avatar">Choose profile picture</button>
+            <button type="button" class="button button-secondary photo-remove" data-kind="avatar" hidden>Remove</button>
+            <input id="avatar-input" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp" data-kind="avatar" />
+          </div>
+        </div>
+
+        <div class="photo-slot">
+          <div class="photo-frame photo-frame-round" id="avatar-then-preview"></div>
+          <p class="field-hint">Back then</p>
+          <div class="photo-actions">
+            <button type="button" class="button button-secondary" data-pick="avatar_then">Choose a batch-era photo</button>
+            <button type="button" class="button button-secondary photo-remove" data-kind="avatar_then" hidden>Remove</button>
+            <input id="avatar-then-input" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp" data-kind="avatar_then" />
+          </div>
+          <form id="photos-form">
+            <label class="check">
+              <input id="avatar-then-visible" name="avatarThenVisible" type="checkbox" />
+              Let visitors flip my profile picture to my batch-era photo
+            </label>
+            <p class="field-hint">
+              Off by default. When it is on, a small tag in the corner of your profile picture is the only
+              hint that there is a second photo behind it.
+            </p>
+            <button class="button button-secondary" type="submit">Save photo setting</button>
+          </form>
+        </div>
+
+        <div class="photo-slot">
+          <h3>Gallery</h3>
+          <p class="field-hint">Up to six prints, each with a caption. The taped-print look is only for these.</p>
+          <div class="gallery-list" id="gallery-list"></div>
+          <div class="photo-actions">
+            <button type="button" class="button button-secondary" data-pick="gallery">Add a photo</button>
+            <input id="gallery-input" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp" data-kind="gallery" />
+          </div>
+        </div>
+      </section>
+
+      <section class="profile-block">
+        <h2>Your codename</h2>
+        <form id="codename-form">
+          <label class="field">
+            Codename
+            <input
+              id="codename-input"
+              name="codename"
+              type="text"
+              minlength={AUTH_CONFIG.codenameMinLength}
+              maxlength={AUTH_CONFIG.codenameMaxLength}
+              autocomplete="nickname"
+              placeholder="e.g. Sampaguita '09"
+            />
+          </label>
+          <p class="field-hint">
+            3 to 20 characters: letters, numbers, spaces, hyphens, or underscores. Your first codename is
+            free; after that it can be changed once every 7 days. It signs every note you post, and it never
+            appears on your profile.
+          </p>
+          <button class="button button-primary" type="submit">Save codename</button>
+        </form>
+      </section>
+    </div>
   </main>
 </BaseLayout>
 
-<script>
-  interface MeResponse { user?: { codename?: string | null } | null; error?: { message: string } }
-  const status = document.querySelector<HTMLElement>("#profile-status")
-  const form = document.querySelector<HTMLFormElement>("#codename-form")
-  const input = document.querySelector<HTMLInputElement>("#codename-input")
-
-  async function csrfToken(): Promise<string> {
-    const response = await fetch("/api/auth/csrf", { credentials: "same-origin" })
-    const body = await response.json() as { token?: string }
-    if (!response.ok || !body.token) throw new Error("Could not prepare the form.")
-    return body.token
+<style>
+  .profile-block {
+    margin-top: 2.5rem;
+    max-width: 640px;
   }
 
-  async function load(): Promise<void> {
-    const response = await fetch("/api/auth/me", { credentials: "same-origin" })
-    const body = await response.json() as MeResponse
+  .profile-block form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
 
-    if (!response.ok || !body.user) {
-      if (status) status.textContent = "Please sign in to set your codename."
-      form?.setAttribute("hidden", "")
-      return
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .field-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .field-row .field {
+    flex: 1 1 12rem;
+  }
+
+  .check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .field-hint {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+  }
+
+  .photo-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .photo-slot h3 {
+    margin: 0;
+  }
+
+  .photo-frame {
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    background: #f2f2f0;
+    color: #777;
+    font-size: 0.85rem;
+  }
+
+  .photo-frame img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .photo-frame-cover {
+    aspect-ratio: 1600 / 640;
+  }
+
+  .photo-frame-round {
+    width: 8rem;
+    height: 8rem;
+    border-radius: 999px;
+  }
+
+  .photo-frame::after {
+    content: "No photo yet";
+  }
+
+  .photo-frame:has(img)::after {
+    content: none;
+  }
+
+  .photo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .photo-input {
+    display: none;
+  }
+
+  .gallery-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: 1rem;
+  }
+
+  .gallery-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .gallery-item img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+  }
+
+  .interest-picks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    min-height: 1.5rem;
+  }
+
+  .interest-shelf {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .interest-group-name {
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6b625a;
+    margin-bottom: 0.3rem;
+  }
+
+  .interest-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .chip {
+    padding: 0.2rem 0.65rem;
+    border: 1px solid #ddd6cc;
+    border-radius: 999px;
+    background: none;
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .chip.is-picked {
+    border-color: #1f1a17;
+    background: #1f1a17;
+    color: #fff;
+  }
+</style>
+
+<script>
+  import { PROFILE_CONFIG } from "../config";
+  import { matchInterests, togglePick, type InterestOption } from "../lib/interests";
+
+  interface ProfileInput {
+    displayName: string;
+    batchYear: number | null;
+    bio: string | null;
+    profession: string | null;
+    basedIn: string | null;
+    birthMonth: number | null;
+    birthDay: number | null;
+    birthYear: number | null;
+    birthdayVisible: boolean;
+    birthYearVisible: boolean;
+    avatarThenVisible: boolean;
+    maritalStatus: string | null;
+    maritalVisible: boolean;
+    socials: { facebook: string | null; instagram: string | null; tiktok: string | null };
+    openToMeetups: boolean;
+    listedInBatch: boolean;
+  }
+
+  interface ProfileResponse {
+    editable?: ProfileInput;
+    photos?: PhotosState;
+    user?: { codename?: string | null };
+    error?: { message: string };
+  }
+
+  const status = document.querySelector<HTMLElement>("#profile-status");
+  const body = document.querySelector<HTMLElement>("#profile-body");
+
+  const codenameForm = document.querySelector<HTMLFormElement>("#codename-form");
+  const codenameInput = document.querySelector<HTMLInputElement>("#codename-input");
+
+  function field<T>(selector: string): T | null {
+    return document.querySelector(selector) as T | null;
+  }
+
+  const displayName = field<HTMLInputElement>("#display-name");
+  const batchYear = field<HTMLInputElement>("#batch-year");
+  const basedIn = field<HTMLInputElement>("#based-in");
+  const profession = field<HTMLInputElement>("#profession");
+  const bio = field<HTMLTextAreaElement>("#bio");
+
+  const birthMonth = field<HTMLSelectElement>("#birth-month");
+  const birthDay = field<HTMLInputElement>("#birth-day");
+  const birthdayVisible = field<HTMLInputElement>("#birthday-visible");
+  const birthYear = field<HTMLInputElement>("#birth-year");
+  const birthYearVisible = field<HTMLInputElement>("#birth-year-visible");
+
+  const maritalStatus = field<HTMLSelectElement>("#marital-status");
+  const maritalVisible = field<HTMLInputElement>("#marital-visible");
+  const socialFacebook = field<HTMLInputElement>("#social-facebook");
+  const socialInstagram = field<HTMLInputElement>("#social-instagram");
+  const socialTiktok = field<HTMLInputElement>("#social-tiktok");
+
+  const listedInBatch = field<HTMLInputElement>("#listed-in-batch");
+  const openToMeetups = field<HTMLInputElement>("#open-to-meetups");
+  const avatarThenVisible = field<HTMLInputElement>("#avatar-then-visible");
+
+  let editable: ProfileInput | null = null;
+
+  function setStatus(message: string): void {
+    if (status) status.textContent = message;
+  }
+
+  async function getCsrfToken(): Promise<string> {
+    const response = await fetch("/api/auth/csrf", { credentials: "same-origin" });
+    const payload = (await response.json()) as { token?: string };
+
+    if (!response.ok || !payload.token) throw new Error("Could not prepare the form.");
+
+    return payload.token;
+  }
+
+  function numberOrNull(input: HTMLInputElement | HTMLSelectElement | null): number | null {
+    const value = input?.value.trim() ?? "";
+
+    return value === "" ? null : Number(value);
+  }
+
+  function textOrNull(input: HTMLInputElement | HTMLTextAreaElement | null): string | null {
+    const value = input?.value.trim() ?? "";
+
+    return value === "" ? null : value;
+  }
+
+  function fill(profile: ProfileInput): void {
+    if (displayName) displayName.value = profile.displayName;
+    if (batchYear) batchYear.value = profile.batchYear === null ? "" : String(profile.batchYear);
+    if (basedIn) basedIn.value = profile.basedIn ?? "";
+    if (profession) profession.value = profile.profession ?? "";
+    if (bio) bio.value = profile.bio ?? "";
+
+    if (birthMonth) birthMonth.value = profile.birthMonth === null ? "" : String(profile.birthMonth);
+    if (birthDay) birthDay.value = profile.birthDay === null ? "" : String(profile.birthDay);
+    if (birthdayVisible) birthdayVisible.checked = profile.birthdayVisible;
+    if (birthYear) birthYear.value = profile.birthYear === null ? "" : String(profile.birthYear);
+    if (birthYearVisible) birthYearVisible.checked = profile.birthYearVisible;
+
+    if (maritalStatus) maritalStatus.value = profile.maritalStatus ?? "";
+    if (maritalVisible) maritalVisible.checked = profile.maritalVisible;
+    if (socialFacebook) socialFacebook.value = profile.socials.facebook ?? "";
+    if (socialInstagram) socialInstagram.value = profile.socials.instagram ?? "";
+    if (socialTiktok) socialTiktok.value = profile.socials.tiktok ?? "";
+
+    if (listedInBatch) listedInBatch.checked = profile.listedInBatch;
+    if (openToMeetups) openToMeetups.checked = profile.openToMeetups;
+  }
+
+  async function loadProfile(): Promise<void> {
+    const response = await fetch("/api/profile", { credentials: "same-origin" });
+    const payload = (await response.json()) as ProfileResponse;
+
+    if (!response.ok || !payload.editable) {
+      setStatus(payload.error?.message ?? "Please sign in to see your profile.");
+
+      return;
     }
 
-    if (input && typeof body.user.codename === "string") input.value = body.user.codename
-    if (status) status.textContent = body.user.codename
-      ? `Your notes are signed as ${body.user.codename}.`
-      : "Pick the name your notes will carry."
+    editable = payload.editable;
+    fill(editable);
+    body?.removeAttribute("hidden");
+    setStatus("These are the details other alumni see. Nothing here is public outside the site.");
+
+    if (payload.photos) renderPhotos(payload.photos);
+
+    await loadInterests();
+    await loadCodename();
   }
 
-  form?.addEventListener("submit", (event) => {
-    event.preventDefault()
+  async function loadCodename(): Promise<void> {
+    const response = await fetch("/api/auth/me", { credentials: "same-origin" });
+    const payload = (await response.json()) as ProfileResponse;
+
+    if (response.ok && payload.user?.codename && codenameInput) codenameInput.value = payload.user.codename;
+  }
+
+  async function saveProfile(partial: Partial<ProfileInput>, successMessage: string): Promise<void> {
+    if (!editable) throw new Error("Your profile is still loading.");
+
+    const token = await getCsrfToken();
+    const response = await fetch("/api/profile", {
+      method: "PUT",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+      body: JSON.stringify({ ...editable, ...partial }),
+    });
+    const payload = (await response.json()) as ProfileResponse;
+
+    if (!response.ok || !payload.editable) {
+      throw new Error(payload.error?.message ?? "Your profile could not be saved.");
+    }
+
+    editable = payload.editable;
+    fill(editable);
+
+    if (payload.photos) renderPhotos(payload.photos);
+
+    setStatus(successMessage);
+  }
+
+  function onSave(formId: string, collect: () => Partial<ProfileInput>, successMessage: string): void {
+    document.querySelector<HTMLFormElement>(`#${formId}`)?.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      void (async () => {
+        try {
+          await saveProfile(collect(), successMessage);
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : "Your profile could not be saved.");
+        }
+      })();
+    });
+  }
+
+  onSave(
+    "about-form",
+    () => ({
+      displayName: displayName?.value.trim() ?? "",
+      batchYear: numberOrNull(batchYear),
+      basedIn: textOrNull(basedIn),
+      profession: textOrNull(profession),
+      bio: textOrNull(bio),
+    }),
+    "Saved. Your about section is up to date.",
+  );
+
+  onSave(
+    "birthday-form",
+    () => ({
+      birthMonth: numberOrNull(birthMonth),
+      birthDay: numberOrNull(birthDay),
+      birthdayVisible: birthdayVisible?.checked ?? false,
+      birthYear: numberOrNull(birthYear),
+      birthYearVisible: birthYearVisible?.checked ?? false,
+    }),
+    "Saved. Your birthday is up to date.",
+  );
+
+  onSave(
+    "details-form",
+    () => ({
+      maritalStatus: (maritalStatus?.value ?? "") === "" ? null : (maritalStatus?.value ?? null),
+      maritalVisible: maritalVisible?.checked ?? false,
+      socials: {
+        facebook: textOrNull(socialFacebook),
+        instagram: textOrNull(socialInstagram),
+        tiktok: textOrNull(socialTiktok),
+      },
+    }),
+    "Saved. Your details are up to date.",
+  );
+
+  onSave(
+    "privacy-form",
+    () => ({
+      listedInBatch: listedInBatch?.checked ?? true,
+      openToMeetups: openToMeetups?.checked ?? false,
+    }),
+    "Saved. Your privacy settings are up to date.",
+  );
+
+  onSave(
+    "photos-form",
+    () => ({ avatarThenVisible: avatarThenVisible?.checked ?? false }),
+    "Saved. Your batch-era photo setting is up to date.",
+  );
+
+  codenameForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+
     void (async () => {
       try {
-        const token = await csrfToken()
+        const token = await getCsrfToken();
         const response = await fetch("/api/auth/codename", {
           method: "POST",
           credentials: "same-origin",
           headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
-          body: JSON.stringify({ codename: input?.value ?? "" }),
-        })
-        const body = await response.json() as MeResponse & { error?: { message: string } }
-        if (!response.ok || !body.user) throw new Error(body.error?.message ?? "Your codename could not be saved.")
-        if (status) status.textContent = `Saved. Your notes are signed as ${body.user.codename ?? input?.value}.`
+          body: JSON.stringify({ codename: codenameInput?.value ?? "" }),
+        });
+        const payload = (await response.json()) as ProfileResponse & { user?: { codename?: string } };
+
+        if (!response.ok || !payload.user?.codename) {
+          throw new Error(payload.error?.message ?? "Your codename could not be saved.");
+        }
+
+        setStatus(`Saved. Your notes are signed as ${payload.user.codename}.`);
       } catch (error) {
-        if (status) status.textContent = error instanceof Error ? error.message : "Your codename could not be saved."
+        setStatus(error instanceof Error ? error.message : "Your codename could not be saved.");
       }
-    })()
-  })
+    })();
+  });
 
-  void load()
-</script>
+  /* ---- Interests: a shared catalogue, picks pinned, cap in PROFILE_CONFIG ---- */
 
-<script>
-  interface MeResponse { user?: { codename?: string | null; birth_month?: number | null; birth_day?: number | null; birthday_visible?: boolean | number | null } | null; error?: { message: string } }
-  const birthdayForm = document.querySelector<HTMLFormElement>("#birthday-form")
-  const birthMonth = document.querySelector<HTMLSelectElement>("#birth-month")
-  const birthDay = document.querySelector<HTMLInputElement>("#birth-day")
-  const birthdayVisible = document.querySelector<HTMLInputElement>("#birthday-visible")
-
-  async function loadBirthday(): Promise<void> {
-    const response = await fetch("/api/auth/me", { credentials: "same-origin" })
-    const body = await response.json() as MeResponse
-
-    if (!response.ok || !body.user) return
-
-    if (birthMonth && body.user.birth_month != null) birthMonth.value = String(body.user.birth_month)
-    if (birthDay && body.user.birth_day != null) birthDay.value = String(body.user.birth_day)
-    if (birthdayVisible && body.user.birthday_visible != null) birthdayVisible.checked = body.user.birthday_visible === 1 || body.user.birthday_visible === true
+  interface InterestGroup {
+    group: string;
+    items: InterestOption[];
   }
 
-  birthdayForm?.addEventListener("submit", (event) => {
-    event.preventDefault()
+  const INTEREST_CAP = PROFILE_CONFIG.maxInterests;
+
+  const interestCounter = field<HTMLElement>("#interests-counter");
+  const interestPicks = field<HTMLElement>("#interest-picks");
+  const interestSearch = field<HTMLInputElement>("#interest-search");
+  const interestResults = field<HTMLElement>("#interest-results");
+  const interestShelf = field<HTMLElement>("#interest-shelf");
+  const suggestForm = field<HTMLFormElement>("#suggest-form");
+  const suggestInput = field<HTMLInputElement>("#suggest-input");
+
+  const interestLabels = new Map<string, string>();
+  let interestGroups: InterestGroup[] = [];
+  let interestCatalogue: InterestOption[] = [];
+  let picks: string[] = [];
+
+  function chipFor(slug: string, label: string): HTMLButtonElement {
+    const picked = picks.includes(slug);
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.className = picked ? "chip is-picked" : "chip";
+    button.textContent = label;
+    button.setAttribute("aria-pressed", picked ? "true" : "false");
+    button.addEventListener("click", () => {
+      void toggleInterest(slug);
+    });
+
+    return button;
+  }
+
+  function renderInterests(): void {
+    if (interestCounter) {
+      interestCounter.textContent = `${picks.length} of ${INTEREST_CAP} interests picked.`;
+    }
+
+    if (interestPicks) {
+      interestPicks.innerHTML = "";
+
+      if (picks.length === 0) {
+        const empty = document.createElement("p");
+
+        empty.className = "field-hint";
+        empty.textContent = "Nothing picked yet.";
+        interestPicks.appendChild(empty);
+      } else {
+        // Pinned, so a pick stays in sight while the member searches.
+        for (const slug of picks) {
+          interestPicks.appendChild(chipFor(slug, interestLabels.get(slug) ?? slug));
+        }
+      }
+    }
+
+    if (interestShelf) {
+      interestShelf.innerHTML = "";
+
+      for (const entry of interestGroups) {
+        const group = document.createElement("div");
+        const name = document.createElement("span");
+        const chips = document.createElement("div");
+
+        name.className = "interest-group-name";
+        name.textContent = entry.group;
+        chips.className = "interest-chips";
+
+        for (const item of entry.items) chips.appendChild(chipFor(item.slug, item.label));
+
+        group.appendChild(name);
+        group.appendChild(chips);
+        interestShelf.appendChild(group);
+      }
+    }
+
+    if (interestResults) renderResults(interestSearch?.value ?? "");
+  }
+
+  function renderResults(query: string): void {
+    if (!interestResults) return;
+
+    interestResults.innerHTML = "";
+
+    for (const match of matchInterests(interestCatalogue, query)) {
+      interestResults.appendChild(chipFor(match.slug, match.label));
+    }
+  }
+
+  async function toggleInterest(slug: string): Promise<void> {
+    const next = togglePick(picks, slug, INTEREST_CAP);
+
+    // Refused at the cap: the same array comes back, so nothing moved.
+    if (next === picks) {
+      setStatus(`You can pick up to ${INTEREST_CAP} interests. Unpick one first.`);
+
+      return;
+    }
+
+    const before = picks;
+
+    picks = next;
+    renderInterests();
+
+    try {
+      const token = await getCsrfToken();
+      const response = await fetch("/api/profile/interests", {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+        body: JSON.stringify({ slugs: picks }),
+      });
+      const payload = (await response.json()) as { interests?: InterestOption[]; error?: { message: string } };
+
+      if (!response.ok || !payload.interests) {
+        throw new Error(payload.error?.message ?? "Your interests could not be saved.");
+      }
+
+      for (const interest of payload.interests) interestLabels.set(interest.slug, interest.label);
+
+      picks = payload.interests.map(interest => interest.slug);
+      renderInterests();
+      setStatus("Saved. Your interests are up to date.");
+    } catch (error) {
+      picks = before;
+      renderInterests();
+      setStatus(error instanceof Error ? error.message : "Your interests could not be saved.");
+    }
+  }
+
+  async function loadInterests(): Promise<void> {
+    try {
+      const [catalogueResponse, picksResponse] = await Promise.all([
+        fetch("/api/interests", { credentials: "same-origin" }),
+        fetch("/api/profile/interests", { credentials: "same-origin" }),
+      ]);
+      const catalogueBody = (await catalogueResponse.json()) as { groups?: InterestGroup[] };
+      const picksBody = (await picksResponse.json()) as { interests?: InterestOption[] };
+
+      if (catalogueResponse.ok && catalogueBody.groups) {
+        interestGroups = catalogueBody.groups;
+        interestCatalogue = interestGroups.flatMap(entry => entry.items);
+      }
+
+      if (picksResponse.ok && picksBody.interests) {
+        for (const interest of picksBody.interests) interestLabels.set(interest.slug, interest.label);
+
+        picks = picksBody.interests.map(interest => interest.slug);
+      }
+
+      renderInterests();
+    } catch {
+      setStatus("The interest list could not be loaded.");
+    }
+  }
+
+  interestSearch?.addEventListener("input", () => {
+    renderResults(interestSearch.value);
+  });
+
+  suggestForm?.addEventListener("submit", event => {
+    event.preventDefault();
+
     void (async () => {
       try {
-        const response = await fetch("/api/auth/csrf", { credentials: "same-origin" })
-        const body = await response.json() as { token?: string }
-        if (!response.ok || !body.token) throw new Error("Could not prepare the form.")
-        const token = body.token
-
-        const res = await fetch("/api/auth/birthday", {
+        const token = await getCsrfToken();
+        const response = await fetch("/api/interests/suggest", {
           method: "POST",
           credentials: "same-origin",
           headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
-          body: JSON.stringify({
-            birth_month: birthMonth?.value ? Number(birthMonth.value) : null,
-            birth_day: birthDay?.value ? Number(birthDay.value) : null,
-            birthday_visible: birthdayVisible?.checked ?? false,
-          }),
-        })
-        const data = await res.json() as { ok?: boolean; error?: { message: string } }
-        if (!res.ok || !data.ok) throw new Error(data.error?.message ?? "Could not save birthday.")
-        await loadBirthday()
-      } catch (error) {
-        alert(error instanceof Error ? error.message : "Could not save birthday.")
-      }
-    })()
-  })
+          body: JSON.stringify({ text: suggestInput?.value ?? "" }),
+        });
+        const payload = (await response.json()) as { error?: { message: string } };
 
-  void loadBirthday()
+        if (!response.ok) throw new Error(payload.error?.message ?? "That suggestion could not be sent.");
+
+        if (suggestInput) suggestInput.value = "";
+
+        setStatus("Sent. An admin will take a look.");
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "That suggestion could not be sent.");
+      }
+    })();
+  });
+
+  /* ---- Photos: resized in the browser, then uploaded ---- */
+
+  const PHOTO_KINDS = ["cover", "avatar", "avatar_then", "gallery"] as const;
+
+  type PhotoKind = (typeof PHOTO_KINDS)[number];
+
+  interface PhotoState {
+    key: string | null;
+    url: string | null;
+  }
+
+  interface GalleryState {
+    id: string;
+    caption: string | null;
+    position: number;
+    url: string | null;
+  }
+
+  interface PhotosState {
+    cover: PhotoState;
+    avatar: PhotoState;
+    avatarThen: PhotoState;
+    gallery: GalleryState[];
+    max: number;
+  }
+
+  /**
+   * The cover and the two circles are fixed shapes, so they are filled and
+   * centre-cropped here rather than being cropped by CSS in three places at
+   * display time. Gallery prints keep their own shape and are only capped.
+   */
+  const PHOTO_TARGETS: Record<PhotoKind, { width: number; height: number; fill: boolean }> = {
+    cover: { width: 1600, height: 640, fill: true },
+    avatar: { width: 800, height: 800, fill: true },
+    avatar_then: { width: 800, height: 800, fill: true },
+    gallery: { width: 1600, height: 1600, fill: false },
+  };
+
+  function isPhotoKind(value: string | undefined): value is PhotoKind {
+    return value !== undefined && (PHOTO_KINDS as readonly string[]).includes(value);
+  }
+
+  async function loadBitmap(
+    file: File,
+  ): Promise<{ source: CanvasImageSource; width: number; height: number; dispose: () => void }> {
+    if (typeof createImageBitmap === "function") {
+      const bitmap = await createImageBitmap(file);
+
+      return { source: bitmap, width: bitmap.width, height: bitmap.height, dispose: () => bitmap.close() };
+    }
+
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.src = url;
+    await image.decode();
+
+    return {
+      source: image,
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      dispose: () => URL.revokeObjectURL(url),
+    };
+  }
+
+  async function preparePhoto(kind: PhotoKind, file: File): Promise<Blob | null> {
+    const target = PHOTO_TARGETS[kind];
+    const image = await loadBitmap(file);
+
+    try {
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
+      if (!context || image.width === 0 || image.height === 0) return null;
+
+      if (target.fill) {
+        const scale = Math.max(target.width / image.width, target.height / image.height);
+        const drawWidth = Math.round(image.width * scale);
+        const drawHeight = Math.round(image.height * scale);
+
+        canvas.width = target.width;
+        canvas.height = target.height;
+        context.drawImage(
+          image.source,
+          Math.round((target.width - drawWidth) / 2),
+          Math.round((target.height - drawHeight) / 2),
+          drawWidth,
+          drawHeight,
+        );
+      } else {
+        const scale = Math.min(1, target.width / Math.max(image.width, image.height));
+
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        context.drawImage(image.source, 0, 0, canvas.width, canvas.height);
+      }
+
+      return await new Promise<Blob | null>(resolve => {
+        canvas.toBlob(resolve, "image/jpeg", 0.85);
+      });
+    } finally {
+      image.dispose();
+    }
+  }
+
+  function setFrame(selector: string, url: string | null): void {
+    const frame = field<HTMLElement>(selector);
+
+    if (!frame) return;
+
+    if (!url) {
+      frame.innerHTML = "";
+
+      return;
+    }
+
+    const image = document.createElement("img");
+
+    image.src = url;
+    image.alt = "";
+    frame.innerHTML = "";
+    frame.appendChild(image);
+  }
+
+  function setRemoveVisible(kind: PhotoKind, visible: boolean): void {
+    const button = document.querySelector<HTMLButtonElement>(`.photo-remove[data-kind="${kind}"]`);
+
+    if (button) button.hidden = !visible;
+  }
+
+  function setPickVisible(kind: PhotoKind, visible: boolean): void {
+    const button = document.querySelector<HTMLButtonElement>(`[data-pick="${kind}"]`);
+
+    if (button) button.hidden = !visible;
+  }
+
+  function renderGallery(items: GalleryState[]): void {
+    const list = field<HTMLElement>("#gallery-list");
+
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    if (items.length === 0) {
+      const empty = document.createElement("p");
+
+      empty.className = "field-hint";
+      empty.textContent = "No gallery photos yet.";
+      list.appendChild(empty);
+
+      return;
+    }
+
+    for (const item of items) {
+      const row = document.createElement("div");
+
+      row.className = "gallery-item";
+
+      if (item.url) {
+        const image = document.createElement("img");
+
+        image.src = item.url;
+        image.alt = "";
+        row.appendChild(image);
+      }
+
+      // Captions are member-written, so they are set as values and text, never
+      // as markup.
+      const caption = document.createElement("input");
+
+      caption.type = "text";
+      caption.maxLength = PROFILE_CONFIG.maxCaptionLength;
+      caption.placeholder = "Add a caption";
+      caption.value = item.caption ?? "";
+      row.appendChild(caption);
+
+      const save = document.createElement("button");
+
+      save.type = "button";
+      save.className = "button button-secondary";
+      save.textContent = "Save caption";
+      save.addEventListener("click", () => {
+        void saveCaption(item.id, caption.value);
+      });
+      row.appendChild(save);
+
+      const remove = document.createElement("button");
+
+      remove.type = "button";
+      remove.className = "button button-secondary";
+      remove.textContent = "Remove";
+      remove.addEventListener("click", () => {
+        void removeGalleryPhoto(item.id);
+      });
+      row.appendChild(remove);
+
+      list.appendChild(row);
+    }
+  }
+
+  function renderPhotos(photos: PhotosState): void {
+    setFrame("#cover-preview", photos.cover.url);
+    setFrame("#avatar-preview", photos.avatar.url);
+    setFrame("#avatar-then-preview", photos.avatarThen.url);
+    setRemoveVisible("cover", photos.cover.url !== null);
+    setRemoveVisible("avatar", photos.avatar.url !== null);
+    setRemoveVisible("avatar_then", photos.avatarThen.url !== null);
+    setPickVisible("gallery", photos.gallery.length < PROFILE_CONFIG.maxGalleryPhotos);
+    renderGallery(photos.gallery);
+  }
+
+  async function uploadPhoto(kind: PhotoKind, file: File): Promise<void> {
+    try {
+      setStatus("Resizing your photo…");
+
+      const blob = await preparePhoto(kind, file);
+
+      if (!blob) throw new Error("That file could not be read as a photo.");
+
+      if (blob.size > PROFILE_CONFIG.maxPhotoBytes) {
+        throw new Error("That photo is still too large after resizing. Try a smaller one.");
+      }
+
+      const token = await getCsrfToken();
+      const form = new FormData();
+
+      form.append("kind", kind);
+      form.append("file", new File([blob], `${kind}.jpg`, { type: blob.type }));
+
+      // No Content-Type header: the browser sets the multipart boundary.
+      const response = await fetch("/api/profile/photos", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-CSRF-Token": token },
+        body: form,
+      });
+      const payload = (await response.json()) as ProfileResponse;
+
+      if (!response.ok) throw new Error(payload.error?.message ?? "That photo could not be saved.");
+
+      setStatus(kind === "gallery" ? "Saved. Your new print is in the gallery." : "Saved. Your photo is up.");
+
+      await loadProfile();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "That photo could not be saved.");
+    }
+  }
+
+  async function removePhoto(kind: PhotoKind): Promise<void> {
+    try {
+      const token = await getCsrfToken();
+      const response = await fetch(`/api/profile/photos/${kind}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers: { "X-CSRF-Token": token },
+      });
+      const payload = (await response.json()) as ProfileResponse;
+
+      if (!response.ok) throw new Error(payload.error?.message ?? "That photo could not be removed.");
+
+      setStatus("Removed.");
+
+      await loadProfile();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "That photo could not be removed.");
+    }
+  }
+
+  async function saveCaption(id: string, caption: string): Promise<void> {
+    try {
+      const token = await getCsrfToken();
+      const response = await fetch(`/api/profile/gallery/${id}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+        body: JSON.stringify({ caption }),
+      });
+      const payload = (await response.json()) as ProfileResponse;
+
+      if (!response.ok) throw new Error(payload.error?.message ?? "That caption could not be saved.");
+
+      setStatus("Saved. Your caption is up.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "That caption could not be saved.");
+    }
+  }
+
+  async function removeGalleryPhoto(id: string): Promise<void> {
+    try {
+      const token = await getCsrfToken();
+      const response = await fetch(`/api/profile/gallery/${id}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers: { "X-CSRF-Token": token },
+      });
+      const payload = (await response.json()) as ProfileResponse;
+
+      if (!response.ok) throw new Error(payload.error?.message ?? "That photo could not be removed.");
+
+      setStatus("Removed.");
+
+      await loadProfile();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "That photo could not be removed.");
+    }
+  }
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-pick]")) {
+    button.addEventListener("click", () => {
+      const kind = button.dataset.pick;
+
+      if (kind) field<HTMLInputElement>(`.photo-input[data-kind="${kind}"]`)?.click();
+    });
+  }
+
+  for (const input of document.querySelectorAll<HTMLInputElement>(".photo-input")) {
+    input.addEventListener("change", () => {
+      const file = input.files?.[0];
+      const kind = input.dataset.kind;
+
+      // Cleared so choosing the same file again still fires a change.
+      input.value = "";
+
+      if (file && isPhotoKind(kind)) void uploadPhoto(kind, file);
+    });
+  }
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>(".photo-remove")) {
+    button.addEventListener("click", () => {
+      const kind = button.dataset.kind;
+
+      if (isPhotoKind(kind)) void removePhoto(kind);
+    });
+  }
+
+  void loadProfile();
 </script>

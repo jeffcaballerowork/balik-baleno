@@ -1,0 +1,129 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Interest suggestions">
+  <main class="auth-page content-width">
+    <p class="eyebrow"><span class="eyebrow-line"></span> ADMIN</p>
+    <h1>Interest <em>suggestions.</em></h1>
+    <p id="suggestion-status">Loading the queue…</p>
+    <div id="suggestion-list" class="approval-list"></div>
+  </main>
+</BaseLayout>
+
+<script>
+  interface Suggestion {
+    id: string
+    display_name: string
+    text: string
+    created_at: string
+  }
+
+  const status = document.querySelector<HTMLElement>("#suggestion-status")
+  const list = document.querySelector<HTMLElement>("#suggestion-list")
+
+  let groups: string[] = []
+
+  async function csrfToken(): Promise<string> {
+    const response = await fetch("/api/auth/csrf", { credentials: "same-origin" })
+    const body = (await response.json()) as { token?: string }
+
+    if (!response.ok || !body.token) throw new Error("Could not prepare the review.")
+
+    return body.token
+  }
+
+  function say(message: string): void {
+    if (status) status.textContent = message
+  }
+
+  async function load(): Promise<void> {
+    const response = await fetch("/api/admin/suggestions", { credentials: "same-origin" })
+    const body = (await response.json()) as {
+      suggestions?: Suggestion[]
+      groups?: string[]
+      error?: { message: string }
+    }
+
+    if (!response.ok || !body.suggestions || !body.groups) {
+      say(body.error?.message ?? "The suggestion queue is unavailable.")
+
+      return
+    }
+
+    groups = body.groups
+    say(
+      body.suggestions.length
+        ? "Approving one adds it to the catalogue for everyone, with no deploy."
+        : "There is nothing waiting for review.",
+    )
+
+    if (!list) return
+
+    list.replaceChildren(
+      ...body.suggestions.map((suggestion) => {
+        const article = document.createElement("article")
+
+        article.className = "approval-card"
+
+        const name = document.createElement("strong")
+
+        name.textContent = `${suggestion.display_name} · ${suggestion.created_at.slice(0, 10)}`
+
+        const text = document.createElement("p")
+
+        text.textContent = suggestion.text
+
+        // Approved suggestions need a home group; the slug is derived server-side
+        // and must not collide with an existing interest.
+        const group = document.createElement("select")
+
+        for (const option of groups) {
+          const item = document.createElement("option")
+
+          item.value = option
+          item.textContent = option
+
+          group.appendChild(item)
+        }
+
+        article.appendChild(name)
+        article.appendChild(text)
+        article.appendChild(group)
+
+        for (const action of ["approve", "decline"] as const) {
+          const button = document.createElement("button")
+
+          button.className = action === "approve" ? "button button-primary" : "button button-outline"
+          button.textContent = action === "approve" ? "Approve" : "Decline"
+          button.addEventListener("click", () => {
+            void review(suggestion.id, action, group.value)
+          })
+          article.appendChild(button)
+        }
+
+        return article
+      }),
+    )
+  }
+
+  async function review(id: string, action: "approve" | "decline", group: string): Promise<void> {
+    try {
+      const token = await csrfToken()
+      const response = await fetch(`/api/admin/suggestions/${encodeURIComponent(id)}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+        body: JSON.stringify({ action, group }),
+      })
+
+      if (!response.ok) throw new Error("The review could not be saved.")
+
+      await load()
+    } catch (error) {
+      say(error instanceof Error ? error.message : "The review could not be saved.")
+    }
+  }
+
+  void load()
+</script>
