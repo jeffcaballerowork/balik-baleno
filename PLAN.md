@@ -6,7 +6,7 @@ Verified locally:
 - Google sign-in, /join form with validation, pending state
 - Sign-out: cookie cleared, session row deleted, /api/auth/me returns null
 - CSRF on POST /api/auth/signout: 200 with valid token and Origin; 403 csrf_invalid with wrong Origin, missing token, or wrong token
-- TypeScript pinned to 6.0.3 (astro check does not support TS 7); `pnpm run check` and `pnpm run build` pass with 0 errors
+- TypeScript pinned to 6.0.3 (astro check does not support TS 7); `pnpm run check` and `pnpm run build` pass with 0 errors; Phase 6 deployed 2026-10-18 (archive wall confirmed, noindex preserved)
 
 Not verified: (none — all Phase 6 work verified locally 2026-10-18; production bootstrap still needs owner's one-time D1 command)
 
