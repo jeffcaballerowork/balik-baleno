@@ -14,7 +14,10 @@ export const GET: APIRoute = async ({ cookies, request }) => {
   try {
     const csrf = await createCsrfToken(request)
 
-    cookies.set(AUTH_CONFIG.csrfCookieName, csrf.signedValue, getCookieOptions(request, 60 * 60))
+    cookies.set(AUTH_CONFIG.csrfCookieName, csrf.signedValue, {
+      ...getCookieOptions(request, 60 * 60),
+      httpOnly: false,
+    })
 
     return jsonResponse({ token: csrf.token })
   } catch (error) {

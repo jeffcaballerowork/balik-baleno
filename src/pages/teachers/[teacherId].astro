@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro"
 import { getTeacherById, getNotesByTeacher } from "../../lib/teachers"
 import { getSessionUser } from "../../lib/auth"
+export const prerender = false;
 
 const { teacherId } = Astro.params
 if (!teacherId) return Astro.redirect("/teachers")
@@ -12,52 +13,166 @@ if (!teacher) return Astro.redirect("/teachers")
 const notes = await getNotesByTeacher(teacherId)
 const user = await getSessionUser(Astro.request)
 ---
-
 <BaseLayout title={`Thank you, ${teacher.name}`}>
-  <main class="content-width">
-    <h1>Thank you, {teacher.name}</h1>
-    {teacher.subject && <p><em>{teacher.subject}</em></p>}
-    
+  <main class="content-width py-12">
+    <a href="/teachers" class="text-indigo-600 hover:text-indigo-800 font-medium mb-4 inline-block">&larr; Back to all teachers</a>
+    <header class="mb-12 flex justify-between items-start">
+      <div>
+        <h1 class="text-4xl font-serif font-bold text-slate-900">Thank you, {teacher.name}</h1>
+        {teacher.subject && <p class="text-xl text-slate-600 mt-2">{teacher.subject}</p>}
+      </div>
+      <div class="flex gap-3">
+        {user ? (
+          <button id="create-note-btn" class="button button-primary" data-teacher-id={teacher.id}>
+            Create Note
+          </button>
+        ) : (
+          <button id="auth-cta-btn" class="button button-primary">
+            Sign in to create a note
+          </button>
+        )}
+      </div>
+    </header>
+
     {user ? (
-        <form id="note-form" data-teacher-id={teacher.id}>
-            <textarea id="note-content" placeholder="Write your thank you note here…"></textarea>
-            <button type="submit">Post note</button>
-        </form>
+      <form id="note-form" data-teacher-id={teacher.id} class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-12 hidden">
+        <h3 class="text-lg font-bold text-slate-900 mb-4">Share a memory or thank you</h3>
+        <textarea
+          id="note-content"
+          name="content"
+          rows="4"
+          placeholder="What did this teacher mean to you? Share a specific memory, lesson, or moment that impacted you..."
+          class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          required
+        ></textarea>
+        <div class="flex justify-end mt-4">
+          <button type="button" class="button button-outline mr-2" id="cancel-note-btn">
+            Cancel
+          </button>
+          <button type="submit" class="button button-primary">
+            Post Note
+          </button>
+        </div>
+      </form>
     ) : (
-        <p>Please <a href="/login">sign in</a> to post a note.</p>
+      <p class="text-slate-600">
+        Please <a href="/sign-in" class="text-indigo-600 font-semibold hover:underline">sign in</a> to post a note.
+      </p>
     )}
 
-    <h2>Notes</h2>
-    <ul>
-        {notes.map(note => (
-            <li>
-                <p>{note.content}</p>
-                <small>- {note.display_name} ({new Date(note.created_at).toLocaleDateString()})</small>
-            </li>
-        ))}
-    </ul>
+    <section class="notes-list">
+      <h2 class="text-2xl font-bold text-slate-900 mb-6">Memories Shared</h2>
+      
+      {notes.length > 0 ? (
+    <div class="space-y-6">
+      {notes.map(note => (
+        <article class="bg-white p-6 rounded-xl border border-slate-200">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <span class="inline-block h-8 w-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold">
+                {note.display_name?.[0] || 'A'}
+              </span>
+            </div>
+            <div class="ml-4 flex-1">
+              <p class="text-slate-900">{note.content}</p>
+              <div class="flex items-baseline mt-3 text-sm text-slate-500">
+                <span class="font-medium">{note.display_name}</span>
+                <span class="mx-2">•</span>
+                <time datetime={note.created_at} class="whitespace-nowrap">
+                  {new Date(note.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                </time>
+              </div>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  ) : (
+    <p class="text-slate-500 text-center py-8">
+      No notes shared yet. Be the first to leave a tribute!
+    </p>
+  )}
+    </section>
   </main>
 </BaseLayout>
-
 <script>
-    const form = document.getElementById("note-form") as HTMLFormElement;
-    if (form) {
-        form.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const teacherId = form.dataset.teacherId;
-            const content = (document.getElementById("note-content") as HTMLTextAreaElement).value;
-            
-            const res = await fetch(`/api/teachers/${teacherId}/notes`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content })
-            });
-
-            if (res.ok) {
-                window.location.reload();
-            } else {
-                alert("Failed to add note.");
-            }
+  // Handle auth modal
+  const authCtaBtn = document.getElementById('auth-cta-btn');
+  
+  if (authCtaBtn) {
+    authCtaBtn.addEventListener('click', () => {
+      if ((window as any).openAuthModal) {
+        (window as any).openAuthModal();
+      }
+    });
+  }
+  
+  // Handle create note button
+  const createNoteBtn = document.getElementById('create-note-btn');
+  const noteForm = document.getElementById('note-form');
+  const cancelNoteBtn = document.getElementById('cancel-note-btn');
+  
+  if (createNoteBtn && noteForm) {
+    createNoteBtn.addEventListener('click', () => {
+      noteForm.classList.remove('hidden');
+      if (createNoteBtn) {
+        createNoteBtn.classList.add('hidden');
+      }
+      const noteContentEl = document.getElementById('note-content') as HTMLTextAreaElement;
+      noteContentEl.focus();
+    });
+  }
+  
+  if (cancelNoteBtn && noteForm) {
+    cancelNoteBtn.addEventListener('click', () => {
+      noteForm.classList.add('hidden');
+      if (createNoteBtn) {
+        createNoteBtn.classList.remove('hidden');
+      }
+      (noteForm as HTMLFormElement).reset();
+    });
+  }
+  
+  // Handle note form submission
+  if (noteForm) {
+    noteForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const teacherId = noteForm.getAttribute('data-teacher-id');
+      const noteContent = document.getElementById('note-content') as HTMLTextAreaElement;
+      const content = noteContent.value.trim();
+      
+      if (!content) return;
+      
+      try {
+        const response = await fetch(`/api/teachers/${teacherId}/notes`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ content })
         });
-    }
+        
+        if (response.ok) {
+          (noteForm as HTMLFormElement).reset();
+          noteForm.classList.add('hidden');
+          const createNoteBtnEl = document.getElementById('create-note-btn');
+          if (createNoteBtnEl) {
+            createNoteBtnEl.classList.remove('hidden');
+          }
+          
+          alert('Your note has been posted!');
+          location.reload();
+        } else {
+          const errorData = await response.json();
+          const errorObj = errorData as Record<string, unknown>;
+          const errorMessage = typeof errorObj.error === 'string' ? errorObj.error : 'Failed to post note';
+          alert(errorMessage);
+        }
+      } catch (error) {
+        console.error('Error posting note:', error);
+        alert('An error occurred while posting your note');
+      }
+    });
+  }
 </script>

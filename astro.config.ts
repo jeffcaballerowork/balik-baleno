@@ -6,6 +6,8 @@ import tailwindcss from "@tailwindcss/vite"
 
 import { defineConfig } from "astro/config"
 
+import icon from "astro-icon"
+
 export default defineConfig({
   output: "static",
 
@@ -17,13 +19,16 @@ export default defineConfig({
     imageService: "passthrough",
   }),
 
-  integrations: [react()],
+  integrations: [react(), icon()],
 
   session: false,
 
   trailingSlash: "never",
 
   vite: {
+    optimizeDeps: {
+      exclude: ['astro-icon', 'zod'],
+    },
     plugins: [tailwindcss()],
   },
 })

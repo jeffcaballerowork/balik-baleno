@@ -309,6 +309,7 @@ export async function getSessionUser(request: Request): Promise<AuthUser | null>
     `SELECT
        u.id, u.google_subject, u.email, u.display_name, u.role, u.status,
        u.batch_year, u.join_note, u.codename, u.codename_updated_at,
+       u.birth_month, u.birth_day, u.birthday_visible,
        u.created_at, u.updated_at, s.id AS session_id
      FROM sessions s
      INNER JOIN users u ON u.id = s.user_id

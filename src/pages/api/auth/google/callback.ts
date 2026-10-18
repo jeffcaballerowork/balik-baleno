@@ -39,6 +39,7 @@ export const GET: APIRoute = async ({ cookies, request, url }) => {
     const user = await findOrCreateGoogleUser(identity)
     const session = await createSession(user.id)
 
+    // Set session cookie with proper security attributes
     cookies.set(
       AUTH_CONFIG.sessionCookieName,
       session.cookieValue,
@@ -46,10 +47,12 @@ export const GET: APIRoute = async ({ cookies, request, url }) => {
     )
     cookies.delete(AUTH_CONFIG.oauthStateCookieName, getCookieOptions(request, 0))
 
+    // Redirect to the join page after successful authentication
     return Response.redirect(new URL(oauthState.returnTo, url.origin), 302)
   } catch (error) {
     logApiError("GET /api/auth/google/callback", error)
 
-    return errorResponse(500, "oauth_sign_in_failed", "Google sign-in could not be completed.")
+    // Return a generic error message to avoid leaking sensitive information
+    return errorResponse(500, "oauth_sign_in_failed", "Google sign-in could not be completed. Please try again later.")
   }
 }

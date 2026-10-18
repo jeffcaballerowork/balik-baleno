@@ -195,27 +195,16 @@ body,.app-shell{background:#f6f3e9;color:#293047}
   gap: 10px;
   margin-top: 20px;
 }
-.daily-prompt {
-  text-align: center;
-  padding: 20px 0;
-  font-family: 'Fraunces', serif;
-  font-size: 1.25rem;
-  color: #1b1a5f;
-  border-top: 1px solid #dfdbce;
-}
-.throwbacks {
+.auth-modal-body {
   margin-top: 20px;
-  padding: 20px;
-  background: #f8f5ec;
-  border: 1px solid #dfdbce;
 }
-.throwback-list {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
+.auth-google-button {
+  margin-bottom: 12px;
 }
-.throwback-card {
-
+.auth-google-icon {
+  display: block;
+  flex: none;
+}
 /* Phase 8 Styles */
 .daily-prompt {
   background: #fdfaf0;
@@ -251,7 +240,6 @@ body,.app-shell{background:#f6f3e9;color:#293047}
   font-size: 0.9rem;
 }
 
-/* Pin rotation and visuals */
 .wall-note-position {
   transition: transform 0.3s ease;
   position: relative;
@@ -269,6 +257,8 @@ body,.app-shell{background:#f6f3e9;color:#293047}
   right: 10px;
   font-size: 20px;
   pointer-events: none;
+  z-index: 1;
+}
 
 .throwback-card {
   min-width: 150px;
@@ -278,6 +268,7 @@ body,.app-shell{background:#f6f3e9;color:#293047}
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   font-size: 0.9rem;
   border-left: 3px solid #ccc;
+}
 
 .celebrant-strip {
   margin: 1rem 0;
@@ -286,17 +277,6 @@ body,.app-shell{background:#f6f3e9;color:#293047}
   border: 1px solid #eec;
   border-radius: 8px;
   text-align: center;
-}
-
-}
-
-  z-index: 1;
-}
-
-  min-width: 200px;
-  padding: 10px;
-  background: white;
-  border: 1px solid #dfdbce;
 }
 @media(max-width:540px){
   .brand-text strong{font-size:17px}

@@ -1,33 +1,43 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro"
+import AuthModal from "../components/AuthModal"
 ---
 
 <BaseLayout title="Sign in">
   <main class="auth-page content-width">
     <p class="eyebrow"><span class="eyebrow-line"></span> ALUMNI ACCESS</p>
-    <h1>Welcome <em>back.</em></h1>
-    <p>Sign in with Google to request access to the Balik Baleno alumni community.</p>
-    <button class="button button-primary" id="google-sign-in">Continue with Google</button>
+    <h1>Welcome back, Balik Baleno Alumnus!</h1>
+    <p>You're already signed in – let's get started.</p>
+    <button class="button button-primary" id="open-auth-modal">Sign in with Google</button>
     <p class="auth-message" id="auth-message" aria-live="polite"></p>
   </main>
+  
+  <AuthModal client:visible />
 </BaseLayout>
 
 <script>
-  const signInButton = document.querySelector<HTMLButtonElement>("#google-sign-in")
+  const openButton = document.querySelector<HTMLButtonElement>("#open-auth-modal")
   const message = document.querySelector<HTMLElement>("#auth-message")
 
-  signInButton?.addEventListener("click", async () => {
-    signInButton.disabled = true
-    if (message) message.textContent = "Opening Google sign-in…"
-
-    const response = await fetch("/api/auth/google?returnTo=/join", { credentials: "same-origin" })
-
-    if (response.redirected) {
-      window.location.assign(response.url)
-      return
+  openButton?.addEventListener("click", () => {
+    // Open the AuthModal via global function
+    if ((window as any).openAuthModal) {
+      (window as any).openAuthModal()
     }
-
-    signInButton.disabled = false
-    if (message) message.textContent = "Sign-in is not configured yet. Please try again later."
   })
+
+  // Hide the Google sign-in button for alumni who are already signed in.
+  async function syncSignInButton(): Promise<void> {
+    try {
+      const response = await fetch("/api/auth/me", { credentials: "same-origin" })
+      const body = await response.json() as { user?: unknown }
+      if (response.ok && body.user && openButton) {
+        openButton.style.display = "none"
+      }
+    } catch {
+      // Leave the button in place if the session cannot be checked.
+    }
+  }
+
+  void syncSignInButton()
 </script>
