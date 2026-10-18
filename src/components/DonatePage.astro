@@ -2,10 +2,11 @@
 import Icon from "./Icon.astro";
 
 const methods = [
-  { label: "GCash", account: "Account name placeholder" },
-  { label: "Maribank", account: "Account name placeholder" },
-  { label: "GoTyme", account: "Account name placeholder" },
-  { label: "Bank transfer", account: "Bank and account name placeholder" },
+  { label: "GCash", account: "Jeffrey Caballero" },
+  { label: "Maribank", account: "Jeffrey Caballero" },
+  { label: "GoTyme", account: "Jeffrey Caballero" },
+  { label: "BPI", account: "Jeffrey Caballero" },
+  { label: "BDO", account: "Jeffrey Caballero" },
 ];
 ---
 
@@ -44,7 +45,7 @@ const methods = [
       {
         methods.map(method => (
           <div class="donate-qr">
-            <div class="donate-qr-box">QR PLACEHOLDER</div>
+            <img src={`/${method.label.toLowerCase().replace(/\s+/g, "-")}-qr.jpg`} alt={`${method.label} QR`} class="donate-qr-img" />
             <strong>{method.label}</strong>
             <span>{method.account}</span>
           </div>
