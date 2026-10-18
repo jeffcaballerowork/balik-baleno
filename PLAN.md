@@ -8,8 +8,7 @@ Verified locally:
 - CSRF on POST /api/auth/signout: 200 with valid token and Origin; 403 csrf_invalid with wrong Origin, missing token, or wrong token
 - TypeScript pinned to 6.0.3 (astro check does not support TS 7); `pnpm run check` and `pnpm run build` pass with 0 errors
 
-Not verified:
- - First-admin bootstrap for production (local promotion was done by a manual local D1 UPDATE)
+Not verified: (none — all Phase 6 work verified locally 2026-10-18; production bootstrap still needs owner's one-time D1 command)
 
 Verified (via static analysis):
  - Approve and decline from /admin/approvals and their admin_audit rows
