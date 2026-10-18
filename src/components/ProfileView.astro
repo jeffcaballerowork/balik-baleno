@@ -57,14 +57,7 @@ const socials = [
 
 const photos = gallery.filter((photo) => photo.url !== null);
 
-const interestGroups: { group: string; items: InterestOption[] }[] = [];
 
-for (const interest of interests) {
-  const existing = interestGroups.find((entry) => entry.group === interest.group);
-
-  if (existing) existing.items.push(interest);
-  else interestGroups.push({ group: interest.group, items: [interest] });
-}
 ---
 
 <article class="profile-view">
@@ -115,19 +108,12 @@ for (const interest of interests) {
       }
 
       {
-        interestGroups.length > 0 && (
+        interests.length > 0 && (
           <section class="profile-block">
             <h2>Into</h2>
-            <div class="profile-interests">
-              {interestGroups.map((entry) => (
-                <div class="profile-interest-group">
-                  <span class="profile-interest-group-name">{entry.group}</span>
-                  <span class="profile-chips">
-                    {entry.items.map((interest) => (
-                      <span class="profile-chip">{interest.label}</span>
-                    ))}
-                  </span>
-                </div>
+            <div class="profile-chips">
+              {interests.map((interest) => (
+                <span class="profile-chip">{interest.label}</span>
               ))}
             </div>
           </section>
@@ -368,20 +354,6 @@ for (const interest of interests) {
     white-space: pre-wrap;
   }
 
-  .profile-interests {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .profile-interest-group-name {
-    display: block;
-    font-size: 0.75rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #6b625a;
-    margin-bottom: 0.3rem;
-  }
 
   .profile-chips {
     display: flex;

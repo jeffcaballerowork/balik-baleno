@@ -5,15 +5,45 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
 ---
 
 <BaseLayout title="Your profile">
-  <main class="auth-page content-width">
-    <p class="eyebrow"><span class="eyebrow-line"></span> PROFILE</p>
-    <h1>Your <em>profile.</em></h1>
-    <p id="profile-status">Loading your profile…</p>
+  <main class="auth-page profile-studio content-width">
+    <div class="profile-header-band">
+      <div>
+        <p class="eyebrow"><span class="eyebrow-line"></span> ALUMNI STUDIO</p>
+        <h1>Your <em>profile.</em></h1>
+        <p class="profile-lead">Manage what fellow alumni see on your public profile and batch directory.</p>
+      </div>
+      <div class="profile-header-actions">
+        <a href="/alumni/me" class="button button-primary view-profile-btn">
+          View public profile &rarr;
+        </a>
+      </div>
+    </div>
+
+    <div id="profile-status-bar" class="status-banner">
+      <span class="status-dot"></span>
+      <p id="profile-status">Loading your profile…</p>
+    </div>
 
     <div id="profile-body" hidden>
-      <p class="profile-nav"><a href="/alumni/me">View my profile</a></p>
-      <section class="profile-block">
-        <h2>About you</h2>
+      <nav class="studio-nav" aria-label="Profile sections">
+        <a href="#about-section" class="studio-nav-pill">About</a>
+        <a href="#photos-section" class="studio-nav-pill">Photos</a>
+        <a href="#birthday-section" class="studio-nav-pill">Birthday</a>
+        <a href="#details-section" class="studio-nav-pill">Details</a>
+        <a href="#interests-section" class="studio-nav-pill">Interests</a>
+        <a href="#privacy-section" class="studio-nav-pill">Privacy</a>
+        <a href="#codename-section" class="studio-nav-pill">Codename</a>
+      </nav>
+
+      <!-- 1. About You -->
+      <section class="profile-card" id="about-section">
+        <div class="card-header">
+          <div>
+            <h2>About you</h2>
+            <p class="card-subtitle">Your identity shown on the alumni directory and batch pages.</p>
+          </div>
+          <div class="card-feedback" id="feedback-about-form"></div>
+        </div>
         <form id="about-form">
           <label class="field">
             Name shown to other alumni
@@ -23,6 +53,7 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
               type="text"
               maxlength={PROFILE_CONFIG.maxDisplayNameLength}
               autocomplete="name"
+              placeholder="e.g. Maria Santos"
             />
           </label>
           <div class="field-row">
@@ -35,6 +66,7 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
                 min={AUTH_CONFIG.batchYearMinimum}
                 max={AUTH_CONFIG.batchYearMaximum}
                 placeholder={String(AUTH_CONFIG.batchYearMaximum)}
+                class="tabular"
               />
             </label>
             <label class="field">
@@ -54,18 +86,111 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
           </p>
           <label class="field">
             What you do now
-            <input id="profession" name="profession" type="text" maxlength={PROFILE_CONFIG.maxProfessionLength} />
+            <input id="profession" name="profession" type="text" maxlength={PROFILE_CONFIG.maxProfessionLength} placeholder="e.g. Civil Engineer, Teacher, Business Owner" />
           </label>
           <label class="field">
             A few words
-            <textarea id="bio" name="bio" rows="4" maxlength={PROFILE_CONFIG.maxBioLength}></textarea>
+            <textarea id="bio" name="bio" rows="4" maxlength={PROFILE_CONFIG.maxBioLength} placeholder="Share a brief greeting, updates, or memories..."></textarea>
           </label>
-          <button class="button button-primary" type="submit">Save about you</button>
+          <div class="form-actions">
+            <button class="button button-primary" type="submit">Save about you</button>
+          </div>
         </form>
       </section>
 
-      <section class="profile-block">
-        <h2>Birthday</h2>
+      <!-- 2. Photos Studio -->
+      <section class="profile-card" id="photos-section">
+        <div class="card-header">
+          <div>
+            <h2>Photos Studio</h2>
+            <p class="card-subtitle">Photos are resized in your browser before upload. Only signed-in approved alumni can see them.</p>
+          </div>
+          <div class="card-feedback" id="feedback-photos-form"></div>
+        </div>
+
+        <div class="photo-studio-grid">
+          <div class="photo-slot photo-slot-cover">
+            <div class="slot-header">
+              <h3>Cover Photo</h3>
+              <p class="field-hint">Panoramic banner displayed across your profile header.</p>
+            </div>
+            <div class="photo-frame photo-frame-cover" id="cover-preview"></div>
+            <div class="photo-actions">
+              <button type="button" class="button button-secondary" data-pick="cover">Choose cover photo</button>
+              <button type="button" class="button button-outline photo-remove" data-kind="cover" hidden>Remove cover</button>
+              <input id="cover-input" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp" data-kind="cover" />
+            </div>
+          </div>
+
+          <div class="avatars-row">
+            <div class="photo-slot photo-slot-avatar">
+              <div class="slot-header">
+                <h3>Profile picture</h3>
+                <p class="field-hint">Your current photo.</p>
+              </div>
+              <div class="avatar-stage">
+                <div class="photo-frame photo-frame-round" id="avatar-preview"></div>
+              </div>
+              <div class="photo-actions">
+                <button type="button" class="button button-secondary" data-pick="avatar">Choose profile picture</button>
+                <button type="button" class="button button-outline photo-remove" data-kind="avatar" hidden>Remove</button>
+                <input id="avatar-input" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp" data-kind="avatar" />
+              </div>
+            </div>
+
+            <div class="photo-slot photo-slot-avatar">
+              <div class="slot-header">
+                <h3>Batch-era photo</h3>
+                <p class="field-hint">Back in high school.</p>
+              </div>
+              <div class="avatar-stage">
+                <div class="photo-frame photo-frame-round" id="avatar-then-preview"></div>
+              </div>
+              <div class="photo-actions">
+                <button type="button" class="button button-secondary" data-pick="avatar_then">Choose batch-era photo</button>
+                <button type="button" class="button button-outline photo-remove" data-kind="avatar_then" hidden>Remove</button>
+                <input id="avatar-then-input" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp" data-kind="avatar_then" />
+              </div>
+            </div>
+          </div>
+
+          <form id="photos-form" class="photo-setting-box">
+            <label class="toggle-switch">
+              <input id="avatar-then-visible" name="avatarThenVisible" type="checkbox" class="toggle-input" />
+              <span class="toggle-slider" aria-hidden="true"></span>
+              <span class="toggle-label">
+                <strong>Enable profile photo flip</strong>
+                <span class="toggle-hint">Let visitors click or tap your profile picture to flip to your batch-era photo.</span>
+              </span>
+            </label>
+            <div class="form-actions">
+              <button class="button button-secondary" type="submit">Save photo setting</button>
+            </div>
+          </form>
+
+          <div class="photo-slot gallery-slot">
+            <div class="slot-header">
+              <h3>Memory Gallery</h3>
+              <p class="field-hint">Up to six prints, each with a caption. The taped-print look is only for these.</p>
+            </div>
+            <div class="gallery-list" id="gallery-list"></div>
+            <div class="photo-actions gallery-actions">
+              <button type="button" class="button button-secondary" data-pick="gallery">+ Add a memory photo</button>
+              <input id="gallery-input" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp" data-kind="gallery" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Birthday -->
+      <section class="profile-card" id="birthday-section">
+        <div class="card-header">
+          <div>
+            <h2>Birthday</h2>
+            <p class="card-subtitle">Share your birthday to receive a celebrant note on the wall on your day.</p>
+          </div>
+          <div class="card-feedback" id="feedback-birthday-form"></div>
+        </div>
         <form id="birthday-form">
           <div class="field-row">
             <label class="field">
@@ -88,38 +213,54 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
             </label>
             <label class="field">
               Day
-              <input id="birth-day" name="birthDay" type="number" min="1" max="31" placeholder="DD" />
+              <input id="birth-day" name="birthDay" type="number" min="1" max="31" placeholder="DD" class="tabular" />
             </label>
           </div>
-          <label class="check">
-            <input id="birthday-visible" name="birthdayVisible" type="checkbox" />
-            Show my birthday on the wall and on my profile
+          <label class="toggle-switch">
+            <input id="birthday-visible" name="birthdayVisible" type="checkbox" class="toggle-input" />
+            <span class="toggle-slider" aria-hidden="true"></span>
+            <span class="toggle-label">
+              <strong>Show my birthday on the wall and on my profile</strong>
+              <span class="toggle-hint">The year stays hidden unless you switch it on below.</span>
+            </span>
           </label>
-          <label class="field">
-            Year
-            <input
-              id="birth-year"
-              name="birthYear"
-              type="number"
-              min={PROFILE_CONFIG.birthYearMinimum}
-              max={AUTH_CONFIG.batchYearMaximum}
-              placeholder="YYYY"
-            />
+          <div class="field-row">
+            <label class="field">
+              Year
+              <input
+                id="birth-year"
+                name="birthYear"
+                type="number"
+                min={PROFILE_CONFIG.birthYearMinimum}
+                max={AUTH_CONFIG.batchYearMaximum}
+                placeholder="YYYY"
+                class="tabular"
+              />
+            </label>
+          </div>
+          <label class="toggle-switch">
+            <input id="birth-year-visible" name="birthYearVisible" type="checkbox" class="toggle-input" />
+            <span class="toggle-slider" aria-hidden="true"></span>
+            <span class="toggle-label">
+              <strong>Show my year of birth</strong>
+              <span class="toggle-hint">A separate switch from the day and month.</span>
+            </span>
           </label>
-          <label class="check">
-            <input id="birth-year-visible" name="birthYearVisible" type="checkbox" />
-            Show my year of birth (a separate switch from the day and month)
-          </label>
-          <p class="field-hint">
-            Optional. If you share your birthday, we'll show a celebrant note on the wall on your day. The
-            year stays hidden unless you switch it on.
-          </p>
-          <button class="button button-secondary" type="submit">Save birthday</button>
+          <div class="form-actions">
+            <button class="button button-secondary" type="submit">Save birthday</button>
+          </div>
         </form>
       </section>
 
-      <section class="profile-block">
-        <h2>Details</h2>
+      <!-- 4. Details -->
+      <section class="profile-card" id="details-section">
+        <div class="card-header">
+          <div>
+            <h2>Details & Socials</h2>
+            <p class="card-subtitle">Personal details and social handles shown on your profile.</p>
+          </div>
+          <div class="card-feedback" id="feedback-details-form"></div>
+        </div>
         <form id="details-form">
           <label class="field">
             Marital status
@@ -131,131 +272,113 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
               <option value="separated">Separated</option>
             </select>
           </label>
-          <label class="check">
-            <input id="marital-visible" name="maritalVisible" type="checkbox" />
-            Show my marital status on my profile
+          <label class="toggle-switch">
+            <input id="marital-visible" name="maritalVisible" type="checkbox" class="toggle-input" />
+            <span class="toggle-slider" aria-hidden="true"></span>
+            <span class="toggle-label">
+              <strong>Show my marital status on my profile</strong>
+            </span>
           </label>
-          <label class="field">
-            Facebook
-            <input id="social-facebook" name="socialFacebook" type="text" maxlength={PROFILE_CONFIG.maxDisplayNameLength} />
-          </label>
-          <label class="field">
-            Instagram
-            <input id="social-instagram" name="socialInstagram" type="text" maxlength={PROFILE_CONFIG.maxDisplayNameLength} />
-          </label>
-          <label class="field">
-            TikTok
-            <input id="social-tiktok" name="socialTiktok" type="text" maxlength={PROFILE_CONFIG.maxDisplayNameLength} />
-          </label>
-          <button class="button button-secondary" type="submit">Save details</button>
-        </form>
-      </section>
-
-      <section class="profile-block">
-        <h2>Into</h2>
-        <p class="field-hint" id="interests-counter">Loading the interest list…</p>
-        <div class="interest-picks" id="interest-picks"></div>
-        <label class="field">
-          Search interests
-          <input
-            id="interest-search"
-            type="search"
-            placeholder="Type to search, e.g. batchoy"
-            autocomplete="off"
-          />
-        </label>
-        <div class="interest-chips" id="interest-results"></div>
-        <div class="interest-shelf" id="interest-shelf"></div>
-        <form id="suggest-form">
-          <label class="field">
-            Can&apos;t find it? Suggest an interest
-            <input id="suggest-input" type="text" maxlength="80" placeholder="e.g. Sari-sari store" />
-          </label>
-          <p class="field-hint">An admin reviews it. If it is approved it becomes pickable for everyone, no deploy needed.</p>
-          <button class="button button-secondary" type="submit">Send suggestion</button>
-        </form>
-      </section>
-
-      <section class="profile-block">
-        <h2>Privacy</h2>
-        <form id="privacy-form">
-          <label class="check">
-            <input id="listed-in-batch" name="listedInBatch" type="checkbox" />
-            List me on my batch page
-          </label>
-          <label class="check">
-            <input id="open-to-meetups" name="openToMeetups" type="checkbox" />
-            Open to meeting up with classmates
-          </label>
-          <p class="field-hint">
-            Meeting up is off by default, and nothing about it is live or location-based. Unlisting yourself
-            takes you out of your batch page and its counts.
-          </p>
-          <button class="button button-secondary" type="submit">Save privacy</button>
-        </form>
-      </section>
-
-      <section class="profile-block">
-        <h2>Photos</h2>
-        <p class="field-hint">
-          Photos are resized in your browser before they are uploaded, they are stored off the site, and
-          only signed-in approved alumni can see them. One photo per slot — choosing a new one replaces
-          the old.
-        </p>
-
-        <div class="photo-slot">
-          <div class="photo-frame photo-frame-cover" id="cover-preview"></div>
-          <div class="photo-actions">
-            <button type="button" class="button button-secondary" data-pick="cover">Choose cover photo</button>
-            <button type="button" class="button button-secondary photo-remove" data-kind="cover" hidden>Remove</button>
-            <input id="cover-input" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp" data-kind="cover" />
-          </div>
-        </div>
-
-        <div class="photo-slot">
-          <div class="photo-frame photo-frame-round" id="avatar-preview"></div>
-          <p class="field-hint">Profile picture</p>
-          <div class="photo-actions">
-            <button type="button" class="button button-secondary" data-pick="avatar">Choose profile picture</button>
-            <button type="button" class="button button-secondary photo-remove" data-kind="avatar" hidden>Remove</button>
-            <input id="avatar-input" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp" data-kind="avatar" />
-          </div>
-        </div>
-
-        <div class="photo-slot">
-          <div class="photo-frame photo-frame-round" id="avatar-then-preview"></div>
-          <p class="field-hint">Back then</p>
-          <div class="photo-actions">
-            <button type="button" class="button button-secondary" data-pick="avatar_then">Choose a batch-era photo</button>
-            <button type="button" class="button button-secondary photo-remove" data-kind="avatar_then" hidden>Remove</button>
-            <input id="avatar-then-input" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp" data-kind="avatar_then" />
-          </div>
-          <form id="photos-form">
-            <label class="check">
-              <input id="avatar-then-visible" name="avatarThenVisible" type="checkbox" />
-              Let visitors flip my profile picture to my batch-era photo
+          <div class="social-fields">
+            <label class="field">
+              Facebook
+              <input id="social-facebook" name="socialFacebook" type="text" maxlength={PROFILE_CONFIG.maxDisplayNameLength} placeholder="e.g. MariaSantosBaleno" />
             </label>
-            <p class="field-hint">
-              Off by default. When it is on, a small tag in the corner of your profile picture is the only
-              hint that there is a second photo behind it.
-            </p>
-            <button class="button button-secondary" type="submit">Save photo setting</button>
+            <label class="field">
+              Instagram
+              <input id="social-instagram" name="socialInstagram" type="text" maxlength={PROFILE_CONFIG.maxDisplayNameLength} placeholder="e.g. mariasantos" />
+            </label>
+            <label class="field">
+              TikTok
+              <input id="social-tiktok" name="socialTiktok" type="text" maxlength={PROFILE_CONFIG.maxDisplayNameLength} placeholder="e.g. mariasantos" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="button button-secondary" type="submit">Save details</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- 5. Interests -->
+      <section class="profile-card" id="interests-section">
+        <div class="card-header">
+          <div>
+            <h2>Into</h2>
+            <p class="card-subtitle" id="interests-counter">Loading the interest list…</p>
+          </div>
+        </div>
+        <div class="interests-container">
+          <div class="interest-picks-box">
+            <span class="picks-title">Your chosen interests:</span>
+            <div class="interest-picks" id="interest-picks"></div>
+          </div>
+          <label class="field search-field">
+            Search interests
+            <input
+              id="interest-search"
+              type="search"
+              placeholder="Type to search, e.g. batchoy"
+              autocomplete="off"
+            />
+          </label>
+          <div class="interest-chips" id="interest-results"></div>
+          <div class="interest-shelf" id="interest-shelf"></div>
+          
+          <form id="suggest-form" class="suggest-box">
+            <div class="card-feedback" id="feedback-suggest-form"></div>
+            <label class="field">
+              Can&apos;t find it? Suggest an interest
+              <input id="suggest-input" type="text" maxlength="80" placeholder="e.g. Sari-sari store" />
+            </label>
+            <p class="field-hint">An admin reviews it. If it is approved it becomes pickable for everyone, no deploy needed.</p>
+            <div class="form-actions">
+              <button class="button button-secondary" type="submit">Send suggestion</button>
+            </div>
           </form>
         </div>
-
-        <div class="photo-slot">
-          <h3>Gallery</h3>
-          <p class="field-hint">Up to six prints, each with a caption. The taped-print look is only for these.</p>
-          <div class="gallery-list" id="gallery-list"></div>
-          <div class="photo-actions">
-            <button type="button" class="button button-secondary" data-pick="gallery">Add a photo</button>
-            <input id="gallery-input" class="photo-input" type="file" accept="image/jpeg,image/png,image/webp" data-kind="gallery" />
-          </div>
-        </div>
       </section>
 
-      <section class="profile-block">
-        <h2>Your codename</h2>
+      <!-- 6. Privacy -->
+      <section class="profile-card" id="privacy-section">
+        <div class="card-header">
+          <div>
+            <h2>Privacy & Community</h2>
+            <p class="card-subtitle">Control your presence on batch directories and meetup lists.</p>
+          </div>
+          <div class="card-feedback" id="feedback-privacy-form"></div>
+        </div>
+        <form id="privacy-form">
+          <label class="toggle-switch">
+            <input id="listed-in-batch" name="listedInBatch" type="checkbox" class="toggle-input" />
+            <span class="toggle-slider" aria-hidden="true"></span>
+            <span class="toggle-label">
+              <strong>List me on my batch page</strong>
+              <span class="toggle-hint">Unlisting takes you out of your batch page and its counts.</span>
+            </span>
+          </label>
+          <label class="toggle-switch">
+            <input id="open-to-meetups" name="openToMeetups" type="checkbox" class="toggle-input" />
+            <span class="toggle-slider" aria-hidden="true"></span>
+            <span class="toggle-label">
+              <strong>Open to meeting up with classmates</strong>
+              <span class="toggle-hint">Off by default. Nothing about it is live or location-based.</span>
+            </span>
+          </label>
+          <div class="form-actions">
+            <button class="button button-secondary" type="submit">Save privacy</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- 7. Codename -->
+      <section class="profile-card" id="codename-section">
+        <div class="card-header">
+          <div>
+            <h2>Your codename</h2>
+            <p class="card-subtitle">Your private pen name for posting notes on the wall.</p>
+          </div>
+          <div class="card-feedback" id="feedback-codename-form"></div>
+        </div>
         <form id="codename-form">
           <label class="field">
             Codename
@@ -274,7 +397,9 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
             free; after that it can be changed once every 7 days. It signs every note you post, and it never
             appears on your profile.
           </p>
-          <button class="button button-primary" type="submit">Save codename</button>
+          <div class="form-actions">
+            <button class="button button-primary" type="submit">Save codename</button>
+          </div>
         </form>
       </section>
     </div>
@@ -282,22 +407,195 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
 </BaseLayout>
 
 <style>
-  .profile-block {
-    margin-top: 2.5rem;
-    max-width: 640px;
+  .profile-studio {
+    max-width: 760px;
   }
 
-  .profile-block form {
+  .profile-header-band {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .profile-lead {
+    color: #6b7385;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-top: 0.25rem;
+    max-width: 520px;
+  }
+
+  .view-profile-btn {
+    white-space: nowrap;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    text-decoration: none;
+    box-shadow: 0 2px 6px rgba(27, 26, 95, 0.15);
+  }
+
+  .status-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #fbf9f1;
+    border: 1px solid #dfdbce;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    color: #1b1a5f;
+    box-shadow: 0 2px 8px rgba(27, 26, 95, 0.03);
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #a7513c;
+    flex-shrink: 0;
+  }
+
+  .studio-nav {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.5rem 0.25rem;
+    margin-bottom: 2rem;
+    position: sticky;
+    top: 60px;
+    z-index: 20;
+    background: rgba(246, 243, 233, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid #dfdbce;
+    scrollbar-width: none;
+  }
+
+  .studio-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .studio-nav-pill {
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: #fbf9f1;
+    border: 1px solid #dfdbce;
+    color: #1b1a5f;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  .studio-nav-pill:hover {
+    background: #1b1a5f;
+    color: #fbf9f1;
+    border-color: #1b1a5f;
+  }
+
+  .profile-card {
+    background: #fbf9f1;
+    border: 1px solid #dfdbce;
+    border-radius: 16px;
+    padding: 28px 24px;
+    margin-top: 2rem;
+    box-shadow: 0 4px 14px rgba(27, 26, 95, 0.03);
+    scroll-margin-top: 110px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .profile-card:hover {
+    border-color: #cbbeaa;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #eaeadd;
+  }
+
+  .card-header h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #1b1a5f;
+    margin: 0;
+  }
+
+  .card-subtitle {
+    font-size: 0.875rem;
+    color: #6b7385;
+    margin: 0.2rem 0 0;
+    line-height: 1.5;
+  }
+
+  .card-feedback {
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-height: 1.25rem;
+  }
+
+  .card-feedback.is-success {
+    color: #276738;
+  }
+
+  .card-feedback.is-error {
+    color: #a7513c;
+  }
+
+  .profile-card form {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    margin-top: 1rem;
+    gap: 1.25rem;
   }
 
   .field {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.4rem;
+    color: #1b1a5f;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+
+  .field input,
+  .field select,
+  .field textarea {
+    width: 100%;
+    border: 1px solid #c3cbe0;
+    background: #fdfaf4;
+    color: #1b1a5f;
+    padding: 10px 12px;
+    font: inherit;
+    border-radius: 8px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    outline: none;
+    border-color: #1b1a5f;
+    box-shadow: 0 0 0 3px rgba(27, 26, 95, 0.1);
+  }
+
+  .field textarea {
+    min-height: 90px;
+    resize: vertical;
+  }
+
+  .field input.tabular {
+    font-variant-numeric: tabular-nums;
   }
 
   .field-row {
@@ -310,27 +608,119 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
     flex: 1 1 12rem;
   }
 
-  .check {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .field-hint {
+    font-size: 0.825rem;
+    color: #6b7385;
+    margin: 0;
+    line-height: 1.5;
   }
 
-  .field-hint {
+  .form-actions {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .form-actions .button {
+    margin-top: 0;
+  }
+
+  /* Modern Accessible Toggle Switches */
+  .toggle-switch {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.65rem 0.75rem;
+    border-radius: 8px;
+    background: rgba(246, 243, 233, 0.4);
+    border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .toggle-switch:hover {
+    background: rgba(246, 243, 233, 0.9);
+    border-color: #dfdbce;
+  }
+
+  .toggle-input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    background-color: #dfdbce;
+    border-radius: 999px;
+    transition: background-color 0.2s ease;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .toggle-slider::after {
+    content: "";
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .toggle-input:checked + .toggle-slider {
+    background-color: #a7513c;
+  }
+
+  .toggle-input:checked + .toggle-slider::after {
+    transform: translateX(20px);
+  }
+
+  .toggle-input:focus-visible + .toggle-slider {
+    box-shadow: 0 0 0 3px rgba(167, 81, 60, 0.25);
+  }
+
+  .toggle-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    color: #1b1a5f;
     font-size: 0.9rem;
-    color: #666;
-    margin: 0;
+    font-weight: normal;
+  }
+
+  .toggle-label strong {
+    font-weight: 600;
+  }
+
+  /* Photos Studio Layout */
+  .photo-studio-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
   }
 
   .photo-slot {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    margin-top: 1.5rem;
   }
 
-  .photo-slot h3 {
-    margin: 0;
+  .slot-header h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #1b1a5f;
+    margin: 0 0 0.2rem;
   }
 
   .photo-frame {
@@ -338,10 +728,11 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
     display: grid;
     place-items: center;
     overflow: hidden;
-    border: 1px solid #ddd;
-    background: #f2f2f0;
-    color: #777;
+    border: 2px dashed #dfdbce;
+    background: #f8f5ec;
+    color: #8c93a3;
     font-size: 0.85rem;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
   }
 
   .photo-frame img {
@@ -353,16 +744,43 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
 
   .photo-frame-cover {
     aspect-ratio: 1600 / 640;
+    border-radius: 12px;
+    max-height: 240px;
+  }
+
+  .photo-frame-cover:has(img) {
+    border-style: solid;
+    border-color: #dfdbce;
+  }
+
+  .avatars-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .avatar-stage {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
   }
 
   .photo-frame-round {
-    width: 8rem;
-    height: 8rem;
-    border-radius: 999px;
+    width: 7.5rem;
+    height: 7.5rem;
+    border-radius: 20px;
+    box-shadow: 0 3px 8px rgba(27, 26, 95, 0.06);
+  }
+
+  .photo-frame-round:has(img) {
+    border-style: solid;
+    border-color: #dfdbce;
   }
 
   .photo-frame::after {
     content: "No photo yet";
+    font-size: 0.8rem;
+    color: #8c93a3;
   }
 
   .photo-frame:has(img)::after {
@@ -376,20 +794,179 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
     align-items: center;
   }
 
+  .photo-actions .button {
+    margin: 0;
+  }
+
+  .photo-setting-box {
+    padding: 1rem;
+    border-radius: 12px;
+    background: rgba(246, 243, 233, 0.6);
+    border: 1px solid #dfdbce;
+  }
+
   .photo-input {
     display: none;
   }
 
+  /* Social fields */
+  .social-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  /* Interests */
+  .interests-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .interest-picks-box {
+    padding: 1.25rem;
+    border-radius: 14px;
+    background: #ffffff;
+    border: 1.5px solid #dcd4c5;
+    box-shadow: 0 2px 6px rgba(27, 26, 95, 0.03);
+  }
+
+  .picks-title {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #1b1a5f;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .interest-picks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    min-height: 2.2rem;
+  }
+
+  .interest-shelf {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .suggest-box {
+    margin-top: 1rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #eaeadd;
+  }
+
+  /* Tactile Button Visual System */
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.1s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  }
+
+  .button:hover {
+    transform: translateY(-1.5px);
+  }
+
+  .button:active {
+    transform: scale(0.97);
+  }
+
+  .button:focus-visible {
+    outline: 2px solid #a7513c;
+    outline-offset: 2px;
+  }
+
+  .button-primary {
+    background: #1b1a5f;
+    border: 1.5px solid #1b1a5f;
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(27, 26, 95, 0.2);
+  }
+
+  .button-primary:hover {
+    background: #2b2a78;
+    border-color: #2b2a78;
+    color: #ffffff;
+    box-shadow: 0 4px 10px rgba(27, 26, 95, 0.25);
+  }
+
+  .button-secondary {
+    background: #f4efe2;
+    border: 1.5px solid #c8bda8;
+    color: #1b1a5f;
+    box-shadow: 0 2px 4px rgba(27, 26, 95, 0.05);
+  }
+
+  .button-secondary:hover {
+    background: #eae2d0;
+    border-color: #1b1a5f;
+    color: #1b1a5f;
+    box-shadow: 0 4px 8px rgba(27, 26, 95, 0.09);
+  }
+
+  .button-outline {
+    background: #ffffff;
+    border: 1.5px solid #c8bda8;
+    color: #1b1a5f;
+    box-shadow: 0 2px 4px rgba(27, 26, 95, 0.04);
+  }
+
+  .button-outline:hover {
+    background: #f4efe2;
+    border-color: #1b1a5f;
+    color: #1b1a5f;
+  }
+
+  .photo-remove,
+  .button-remove {
+    background: #fdf5f3;
+    border: 1.5px solid #e2c0b8;
+    color: #a7513c;
+    box-shadow: 0 2px 4px rgba(167, 81, 60, 0.05);
+  }
+
+  .photo-remove:hover,
+  .button-remove:hover {
+    background: #a7513c;
+    border-color: #a7513c;
+    color: #ffffff;
+    box-shadow: 0 4px 8px rgba(167, 81, 60, 0.2);
+  }
+
+  .button.is-saving {
+    opacity: 0.7;
+    pointer-events: none;
+    transform: none;
+  }
+</style>
+
+<style is:global>
+  /* Dynamically injected Gallery cards */
   .gallery-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+    gap: 1.25rem;
   }
 
   .gallery-item {
+    background: #fff;
+    border: 1px solid #dfdbce;
+    border-radius: 8px;
+    padding: 10px;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.6rem;
+    box-shadow: 0 4px 10px rgba(27, 26, 95, 0.04);
   }
 
   .gallery-item img {
@@ -397,50 +974,202 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
+    border-radius: 4px;
+    background: #f6f3e9;
   }
 
-  .interest-picks {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    min-height: 1.5rem;
+  .gallery-item input {
+    font-size: 0.85rem;
+    padding: 6px 8px;
+    border: 1px solid #c3cbe0;
+    border-radius: 6px;
+    background: #fdfaf4;
+    color: #1b1a5f;
   }
 
-  .interest-shelf {
+  .gallery-actions-row {
     display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .gallery-item .button {
+    flex: 1;
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    min-height: 34px;
+    margin: 0;
+    border-radius: 6px;
+    font-weight: 600;
+  }
+
+  .gallery-item .gallery-save {
+    background: #1b1a5f;
+    color: #fff;
+    border: 1px solid #1b1a5f;
+  }
+
+  .gallery-item .gallery-save:hover {
+    background: #2b2a78;
+    color: #fff;
+  }
+
+  .gallery-item .gallery-remove {
+    background: #fdf5f3;
+    color: #a7513c;
+    border: 1px solid #e2c0b8;
+  }
+
+  .gallery-item .gallery-remove:hover {
+    background: #a7513c;
+    color: #fff;
+    border-color: #a7513c;
+  }
+
+  /* Dynamically injected Collapsible Interest Groups */
+  .interest-shelf-group {
+    background: #ffffff;
+    border: 1.5px solid #dfdbce;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(27, 26, 95, 0.03);
+    overflow: hidden;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .interest-shelf-group[open] {
+    border-color: #1b1a5f;
+    box-shadow: 0 4px 12px rgba(27, 26, 95, 0.07);
+  }
+
+  .interest-group-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    background: #faf7ef;
+    transition: background-color 0.15s ease;
+  }
+
+  .interest-group-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .interest-group-summary:hover {
+    background: #f4eee2;
+  }
+
+  .interest-group-title-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .interest-group-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #8c93a3;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+  }
+
+  .interest-shelf-group[open] .interest-group-chevron {
+    transform: rotate(180deg);
+    color: #1b1a5f;
   }
 
   .interest-group-name {
-    display: block;
-    font-size: 0.75rem;
-    letter-spacing: 0.06em;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #6b625a;
-    margin-bottom: 0.3rem;
+    color: #1b1a5f;
+    font-weight: 700;
+  }
+
+  .interest-group-badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #ebe6d9;
+    color: #6b7385;
+    font-weight: 600;
+  }
+
+  .interest-group-badge.has-picks {
+    background: #1b1a5f;
+    color: #ffffff;
   }
 
   .interest-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: 0.55rem;
+    padding: 16px;
+    background: #ffffff;
+    border-top: 1px solid #f0ecdf;
   }
 
+  /* Standout Pill Option */
   .chip {
-    padding: 0.2rem 0.65rem;
-    border: 1px solid #ddd6cc;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 1rem;
+    border: 1.5px solid #d4cbb8;
     border-radius: 999px;
-    background: none;
+    background: #ffffff;
+    color: #1b1a5f;
     font: inherit;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    font-weight: 600;
     cursor: pointer;
+    box-shadow: 0 2px 4px rgba(27, 26, 95, 0.04);
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .chip-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95em;
+    line-height: 1;
+    font-weight: 800;
+    color: #a7513c;
+  }
+
+  .chip-text {
+    line-height: 1.2;
+  }
+
+  .chip:hover {
+    border-color: #1b1a5f;
+    background: #f7f3e8;
+    transform: translateY(-1.5px);
+    box-shadow: 0 4px 8px rgba(27, 26, 95, 0.09);
+  }
+
+  .chip:active {
+    transform: scale(0.96);
   }
 
   .chip.is-picked {
-    border-color: #1f1a17;
-    background: #1f1a17;
-    color: #fff;
+    border-color: #1b1a5f;
+    background: #1b1a5f;
+    color: #ffffff;
+    box-shadow: 0 3px 6px rgba(27, 26, 95, 0.2);
+  }
+
+  .chip.is-picked .chip-icon {
+    color: #ffffff;
+  }
+
+  .chip.is-picked:hover {
+    background: #a7513c;
+    border-color: #a7513c;
   }
 </style>
 
@@ -609,14 +1338,49 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
   }
 
   function onSave(formId: string, collect: () => Partial<ProfileInput>, successMessage: string): void {
-    document.querySelector<HTMLFormElement>(`#${formId}`)?.addEventListener("submit", (event) => {
+    const form = document.querySelector<HTMLFormElement>(`#${formId}`);
+
+    form?.addEventListener("submit", (event) => {
       event.preventDefault();
 
       void (async () => {
+        const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        const feedback = document.querySelector<HTMLElement>(`#feedback-${formId}`);
+        const origText = submitBtn?.textContent ?? "Save";
+
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.classList.add("is-saving");
+          submitBtn.textContent = "Saving…";
+        }
+        if (feedback) {
+          feedback.className = "card-feedback";
+          feedback.textContent = "";
+        }
+
         try {
           await saveProfile(collect(), successMessage);
+          if (feedback) {
+            feedback.className = "card-feedback is-success";
+            feedback.textContent = "✓ Saved";
+            setTimeout(() => {
+              feedback.textContent = "";
+            }, 4000);
+          }
         } catch (error) {
-          setStatus(error instanceof Error ? error.message : "Your profile could not be saved.");
+          const msg = error instanceof Error ? error.message : "Your profile could not be saved.";
+
+          setStatus(msg);
+          if (feedback) {
+            feedback.className = "card-feedback is-error";
+            feedback.textContent = msg;
+          }
+        } finally {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove("is-saving");
+            submitBtn.textContent = origText;
+          }
         }
       })();
     });
@@ -679,6 +1443,20 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
     event.preventDefault();
 
     void (async () => {
+      const submitBtn = codenameForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+      const feedback = document.querySelector<HTMLElement>("#feedback-codename-form");
+      const origText = submitBtn?.textContent ?? "Save codename";
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add("is-saving");
+        submitBtn.textContent = "Saving…";
+      }
+      if (feedback) {
+        feedback.className = "card-feedback";
+        feedback.textContent = "";
+      }
+
       try {
         const token = await getCsrfToken();
         const response = await fetch("/api/auth/codename", {
@@ -693,9 +1471,30 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
           throw new Error(payload.error?.message ?? "Your codename could not be saved.");
         }
 
-        setStatus(`Saved. Your notes are signed as ${payload.user.codename}.`);
+        const msg = `Saved. Your notes are signed as ${payload.user.codename}.`;
+
+        setStatus(msg);
+        if (feedback) {
+          feedback.className = "card-feedback is-success";
+          feedback.textContent = "✓ Saved";
+          setTimeout(() => {
+            feedback.textContent = "";
+          }, 4000);
+        }
       } catch (error) {
-        setStatus(error instanceof Error ? error.message : "Your codename could not be saved.");
+        const msg = error instanceof Error ? error.message : "Your codename could not be saved.";
+
+        setStatus(msg);
+        if (feedback) {
+          feedback.className = "card-feedback is-error";
+          feedback.textContent = msg;
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove("is-saving");
+          submitBtn.textContent = origText;
+        }
       }
     })();
   });
@@ -721,6 +1520,7 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
   let interestGroups: InterestGroup[] = [];
   let interestCatalogue: InterestOption[] = [];
   let picks: string[] = [];
+  const openGroups = new Set<string>();
 
   function chipFor(slug: string, label: string): HTMLButtonElement {
     const picked = picks.includes(slug);
@@ -728,8 +1528,20 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
 
     button.type = "button";
     button.className = picked ? "chip is-picked" : "chip";
-    button.textContent = label;
     button.setAttribute("aria-pressed", picked ? "true" : "false");
+
+    const icon = document.createElement("span");
+    icon.className = "chip-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = picked ? "✓" : "+";
+
+    const text = document.createElement("span");
+    text.className = "chip-text";
+    text.textContent = label;
+
+    button.appendChild(icon);
+    button.appendChild(text);
+
     button.addEventListener("click", () => {
       void toggleInterest(slug);
     });
@@ -762,20 +1574,64 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
     if (interestShelf) {
       interestShelf.innerHTML = "";
 
-      for (const entry of interestGroups) {
-        const group = document.createElement("div");
-        const name = document.createElement("span");
-        const chips = document.createElement("div");
+      for (let i = 0; i < interestGroups.length; i++) {
+        const entry = interestGroups[i];
+        const pickedCount = entry.items.filter(item => picks.includes(item.slug)).length;
+        const details = document.createElement("details");
+        details.className = "interest-shelf-group";
 
+        const shouldOpen = openGroups.has(entry.group) || (openGroups.size === 0 && (pickedCount > 0 || i === 0));
+        if (shouldOpen) {
+          details.open = true;
+          openGroups.add(entry.group);
+        }
+
+        details.addEventListener("toggle", () => {
+          if (details.open) {
+            openGroups.add(entry.group);
+          } else {
+            openGroups.delete(entry.group);
+          }
+        });
+
+        const summary = document.createElement("summary");
+        summary.className = "interest-group-summary";
+
+        const titleBox = document.createElement("div");
+        titleBox.className = "interest-group-title-box";
+
+        const chevron = document.createElement("span");
+        chevron.className = "interest-group-chevron";
+        chevron.setAttribute("aria-hidden", "true");
+        chevron.innerHTML = `<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+
+        const name = document.createElement("span");
         name.className = "interest-group-name";
         name.textContent = entry.group;
+
+        titleBox.appendChild(chevron);
+        titleBox.appendChild(name);
+
+        const badge = document.createElement("span");
+        badge.className = "interest-group-badge";
+        if (pickedCount > 0) {
+          badge.textContent = `${pickedCount} picked`;
+          badge.classList.add("has-picks");
+        } else {
+          badge.textContent = `${entry.items.length} options`;
+        }
+
+        summary.appendChild(titleBox);
+        summary.appendChild(badge);
+
+        const chips = document.createElement("div");
         chips.className = "interest-chips";
 
         for (const item of entry.items) chips.appendChild(chipFor(item.slug, item.label));
 
-        group.appendChild(name);
-        group.appendChild(chips);
-        interestShelf.appendChild(group);
+        details.appendChild(summary);
+        details.appendChild(chips);
+        interestShelf.appendChild(details);
       }
     }
 
@@ -867,6 +1723,20 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
     event.preventDefault();
 
     void (async () => {
+      const submitBtn = suggestForm.querySelector<HTMLButtonElement>('button[type="submit"]');
+      const feedback = document.querySelector<HTMLElement>("#feedback-suggest-form");
+      const origText = submitBtn?.textContent ?? "Send suggestion";
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add("is-saving");
+        submitBtn.textContent = "Sending…";
+      }
+      if (feedback) {
+        feedback.className = "card-feedback";
+        feedback.textContent = "";
+      }
+
       try {
         const token = await getCsrfToken();
         const response = await fetch("/api/interests/suggest", {
@@ -881,9 +1751,30 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
 
         if (suggestInput) suggestInput.value = "";
 
-        setStatus("Sent. An admin will take a look.");
+        const msg = "Sent. An admin will take a look.";
+
+        setStatus(msg);
+        if (feedback) {
+          feedback.className = "card-feedback is-success";
+          feedback.textContent = "✓ Sent";
+          setTimeout(() => {
+            feedback.textContent = "";
+          }, 4000);
+        }
       } catch (error) {
-        setStatus(error instanceof Error ? error.message : "That suggestion could not be sent.");
+        const msg = error instanceof Error ? error.message : "That suggestion could not be sent.";
+
+        setStatus(msg);
+        if (feedback) {
+          feedback.className = "card-feedback is-error";
+          feedback.textContent = msg;
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove("is-saving");
+          submitBtn.textContent = origText;
+        }
       }
     })();
   });
@@ -1064,25 +1955,30 @@ import { AUTH_CONFIG, PROFILE_CONFIG } from "../config"
       caption.value = item.caption ?? "";
       row.appendChild(caption);
 
+      const actions = document.createElement("div");
+      actions.className = "gallery-actions-row";
+
       const save = document.createElement("button");
 
       save.type = "button";
-      save.className = "button button-secondary";
+      save.className = "button button-secondary gallery-save";
       save.textContent = "Save caption";
       save.addEventListener("click", () => {
         void saveCaption(item.id, caption.value);
       });
-      row.appendChild(save);
+      actions.appendChild(save);
 
       const remove = document.createElement("button");
 
       remove.type = "button";
-      remove.className = "button button-secondary";
+      remove.className = "button button-secondary button-remove gallery-remove";
       remove.textContent = "Remove";
       remove.addEventListener("click", () => {
         void removeGalleryPhoto(item.id);
       });
-      row.appendChild(remove);
+      actions.appendChild(remove);
+
+      row.appendChild(actions);
 
       list.appendChild(row);
     }

@@ -40,7 +40,7 @@ import BaseLayout from "../layouts/BaseLayout.astro"
     }
 
     if (body.user.status === "approved") {
-      if (status) status.textContent = "Your alumni account is approved. Welcome back."
+      window.location.replace("/profile")
       return
     }
 

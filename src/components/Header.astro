@@ -41,13 +41,17 @@ const isSignedIn = !!sessionCookie;
           Sign out
         </button>
       )}
-      <button class="mobile-join" data-nav="/join">
-        Join the room <Icon name="arrow" size={17} />
-      </button>
+      {!isSignedIn && (
+        <button class="mobile-join" data-nav="/join">
+          Join the room <Icon name="arrow" size={17} />
+        </button>
+      )}
     </nav>
-    <button class="header-join" data-nav="/join">
-      Join the room <Icon name="arrow" size={16} />
-    </button>
+    {!isSignedIn && (
+      <button class="header-join" data-nav="/join">
+        Join the room <Icon name="arrow" size={16} />
+      </button>
+    )}
     {isSignedIn && (
       <UserMenu className="header-user-menu" client:load />
     )}
